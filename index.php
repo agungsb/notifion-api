@@ -23,6 +23,7 @@ require 'config.php';
 require 'db.php';
 require 'JWT.php';
 require 'templates/home.php';
+require 'templates/createAttach.php';
 require 'templates/preview.php';
 require 'templates/view.php';
 
@@ -80,6 +81,7 @@ $app->post('/login', 'authLogin');
 $app->post('/registerGCMUser', 'registerGCMUser');
 $app->post('/unregisterGCMUser', 'unregisterGCMUser');
 $app->post('/submitSurat', 'submitSurat');
+$app->post('/kirimEmail', 'kirimEmail');
 $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
@@ -593,15 +595,19 @@ function submitSurat() {
         $stmt->bindValue(":tanggal_surat", $tanggal_surat);
 
         try {
-            $stmt->execute();
-            $registration_ids = array();
-            if (!empty(pushNotification($db, $penandatangan))) {
-                $registration_ids = pushNotification($db, $penandatangan);
-            }
+//            $stmt->execute();
+            
+//            $registration_ids = array();
+//            if ((pushNotification($db, $penandatangan)) != null) {
+//                $registration_ids = pushNotification($db, $penandatangan);
+//            }
+//
+//            $gcm = new GCM();
+//            $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
+//            $result = $gcm->send_notification($registration_ids, $pesan);
 
-            $gcm = new GCM();
-            $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
-            $result = $gcm->send_notification($registration_ids, $pesan);
+            createAttachment($paramSubject, $tujuan, $paramIdInstitusi, $penandatangan, $paramNosurat, (int) $paramLampiran, $paramHal, $paramIsi, $tembusan, $tanggal_surat);
+            
             echo '{"result": "success"}';
         } catch (PDOException $ex) {
 //            echo $ex->getMessage();
@@ -767,7 +773,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
         if (!empty($tujuan[$i])) {
 //            echo $id_surat . " - " . $tujuan[$i] . " - " . $tembusan . " <br/>";
             kirimSurat($db, $id_surat, $tujuan[$i], $tembusan);
-            if (!empty(pushNotification($db, $tujuan[$i]))) {
+            if ((pushNotification($db, $tujuan[$i])) != null) {
                 $registration_ids = pushNotification($db, $tujuan[$i]);
             }
         }
@@ -844,4 +850,47 @@ function convertDate($date) {
 function listBulan($index) {
     $bulan = array("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember");
     return $bulan[$index - 1];
+}
+
+function kirimEmail() {
+//    echo 'Kirim Email';
+    require_once 'PHPMailer/PHPMailerAutoload.php';
+    require_once('tcpdf/tcpdf.php');
+
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+//    $paramSender = $req['sender'];
+    $paramReceiver = $req['receiver'];
+    $paramSubject = $req['subject_surat'];
+
+    $nama_file = $paramSubject . '.pdf';
+    $pdf->Output('$nama_file', 'I');
+    echo $paramSubject . "-" . $paramReceiver;
+
+    $mail = new PHPMailer(); // create a new object
+    $mail->IsSMTP(); // enable SMTP
+    //$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
+    $mail->SMTPAuth = true; // authentication enabled
+    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
+    $mail->Host = "smtp.gmail.com";
+    $mail->Port = 465; // or 587
+    $mail->IsHTML(true);
+    $mail->Username = "firdaus.ibnuu@gmail.com";
+    $mail->Password = "firdausibnu21";
+    $mail->SetFrom("PDF");
+    $mail->Subject = "$paramSubject";
+    $mail->Body = "Test PDF.";
+//$email = 'akbar.kusuma@zentum-intizhara.com';
+    $email = $paramReceiver;
+    $mail->addStringAttachment($output, $nama_file);
+    $mail->AddAddress($email);
+    if (!$mail->Send()) {
+        echo "<script type='text/javascript'>alert('GAGAL MENGIRIM EMAIL.');</script>";
+        //header("refresh: 0;url=index.php");
+        $mail->ErrorInfo;
+    } else {
+        echo "<script type='text/javascript'>alert('BERHASIL MENGIRIM EMAIL.');</script>";
+        //header("refresh: 0;url=index.php");
+    }
 }
