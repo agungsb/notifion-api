@@ -62,8 +62,7 @@ $app->patch('/patch', function () {
 // DELETE route
 $app->delete('/delete', function () {
     echo 'This is a DELETE route';
-}
-);
+});
 
 $app->get('/users', 'getAllUsers');
 $app->get('/tujuan', 'getTujuan');
