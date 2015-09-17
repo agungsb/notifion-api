@@ -2,6 +2,7 @@
 
 function preview2() {
     global $app;
+    $db = getDB();
 
     $app->response->headers->set("Content-Type", "application/pdf");
 
@@ -9,17 +10,23 @@ function preview2() {
 
     $req = json_decode($app->request()->getBody(), TRUE);
 
+    $paramToken = $req['token'];
 
+    $decode = JWT::decode($paramToken, TK);
+    
+    $id_institusi = $decode->id_institusi;
 
     $paramSubject = $req['subject']; // Getting parameter with names
     $paramTanggalSurat = $req['tanggal_surat']; // Getting parameter with names
-    $paramNoSurat = $req['nosurat'];
+//    $paramNoSurat = $req['nosurat'];
     $paramLampiran = $req['lampiran'];
-    $paramHal = $req['hal'];
+    $paramHal = $req['subject'];
     $paramTujuan = $req['tujuan'];
     $paramPenandatangan = $req['penandatangan'];
     $paramTembusan = $req['tembusan'];
     $paramIsiSurat = $req['isi'];
+    
+    $paramNoSurat = checkCounter($db, $id_institusi, true) . "/UN39." . getKodeUnit($db, $id_institusi). "/".$req['hal'] ."/".  date('y');
 
     $timezone_identifier = "Asia/Jakarta";
     date_default_timezone_set($timezone_identifier);
@@ -67,7 +74,7 @@ function preview2() {
 //";
 //    $input = "<p>asdf</p><p>asdf<span>asdf</span></p>";
     $input = $paramIsiSurat;
-    $pdf->MultiCell(170, 0, '' . $input . '' . "\n", 0, 'J', 0, 1, 25, '', true, 0, true, true, 0, 'T', true); //nilai 1 setelah J adalah posisi cell default berada dibawah
+    $pdf->MultiCell(170, 0, '' . $input . '', 0, 'J', 0, 1, 25, '', true, 0, true, true, 0, 'T', true); //nilai 1 setelah J adalah posisi cell default berada dibawah
 //$pdf->MultiCell($w, $h, $txt, $border, $align, $fill, $ln, $x, $y, $reseth, $stretch, $ishtml, $autopadding, $maxh);
 ////$pdf->writeHTML($html);
 //

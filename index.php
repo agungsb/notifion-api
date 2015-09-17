@@ -75,6 +75,7 @@ $app->get('/suratsKeluar/:token/:offset/:limit', 'getAllSuratsKeluar');
 $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
 $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
+$app->get('/kodeHals', 'getKodeHals');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
 $app->get('/view/:id/:token', 'viewSurat');
@@ -88,17 +89,17 @@ $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
 $app->post('/test', 'setTest');
 
-function setTest(){
-    
+function setTest() {
+
     global $app;
 
     $app->response->headers->set("Content-Type", "text/html");
 
     $req = json_decode($app->request()->getBody(), TRUE);
     $paramIsiSurat = $req['isi'];
-    
+
     echo $paramIsiSurat;
-    
+
     print_r($req);
 }
 
@@ -158,7 +159,7 @@ function getPenandatangan($token) {
 
     try {
         $db = getDB();
-        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = :id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_institusi = users.id_institusi";
+        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->execute();
@@ -457,6 +458,20 @@ function getAllPejabats() {
     echo json_encode($output);
 }
 
+function getKodeHals() {
+    $db = getDB();
+    $query = "SELECT surat_kode_hal.* FROM surat_kode_hal";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("deskripsi" => $row['deskripsi'], "kode_hal" => $row['kode_hal']);
+        $i++;
+    }
+    echo '{"result": ' . json_encode($output) . '}';
+//    echo json_encode($output);
+}
+
 function authLogin() {
     global $app;
 
@@ -578,7 +593,7 @@ function submitSurat() {
 //            $penandatangan .= $paramPenandatangan[$i]['identifier'] . "@+id/";
             $penandatangan = $paramPenandatangan[0]['identifier'];
         }
-        $paramNosurat = $req['nosurat'];
+//        $paramNosurat = $req['nosurat'];
         $paramLampiran = $req['lampiran'];
         $paramHal = $req['hal'];
         $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
@@ -588,6 +603,8 @@ function submitSurat() {
         date_default_timezone_set($timezone_identifier);
         $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
 
+        $nosurat = checkCounter($db, $paramIdInstitusi, false) . "/UN39." . getKodeUnit($db, $paramIdInstitusi) . "/" . $paramHal . "/" . date('y');
+
         $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat)";
 
         $stmt = $db->prepare($query);
@@ -595,7 +612,7 @@ function submitSurat() {
         $stmt->bindValue(":tujuan", $tujuan);
         $stmt->bindValue(":id_institusi", $paramIdInstitusi);
         $stmt->bindValue(":penandatangan", $penandatangan);
-        $stmt->bindValue(":nosurat", $paramNosurat);
+        $stmt->bindValue(":nosurat", $nosurat);
         $stmt->bindValue(":lampiran", (int) $paramLampiran, PDO::PARAM_INT);
         $stmt->bindValue(":hal", $paramHal);
         $stmt->bindValue(":isi", $paramIsi);
@@ -630,6 +647,61 @@ function submitSurat() {
     } else {
         echo '{"result": "error"}';
     }
+}
+
+function getKodeUnit($db, $id_institusi) {
+    $query = "SELECT surat_kode_unit.* FROM surat_kode_unit WHERE surat_kode_unit.id_institusi=:id_institusi";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_institusi", $id_institusi);
+    $stmt->execute();
+    $row = $stmt->fetch();
+    return $row['kode_unit'];
+}
+
+function checkCounter($db, $id_institusi, $is_preview) {
+    $query = "SELECT * FROM surat_counter WHERE id_institusi = :id_institusi AND year = :year";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(':id_institusi', $id_institusi);
+    $stmt->bindValue(':year', date("Y"));
+    $stmt->execute();
+    if ($stmt->rowCount() > 0) { // Jika ada, maka counter ditambahkan
+        $row = $stmt->fetch();
+        if ($row['year'] == date("Y")) { // Update existing row
+            $result = $row['counter'] + 1;
+            if (!$is_preview) {
+                updateCounter($db, $id_institusi, $result, date("Y")); // JIka bukan preview surat, tambahkan counternya
+            }
+        } else if ($row['year'] < date("Y")) { // Create new row with current year
+            $result = 1;
+            if (!$is_preview) {
+                addCounter($db, $id_institusi, $result, date("Y"));
+            }
+        }
+    } else { // Jika belum ada, tambahkan ke dalam tabel surat_counter
+        $result = 1;
+        if (!$is_preview) {
+            addCounter($db, $id_institusi, $result, date("Y"));
+        }
+    }
+    return $result;
+}
+
+function updateCounter($db, $id_institusi, $result, $year) {
+    $query = "UPDATE `surat_counter` SET counter=:result WHERE id_institusi = :id_institusi AND year = :year";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(':result', $result);
+    $stmt->bindValue(':id_institusi', $id_institusi);
+    $stmt->bindValue(':year', $year);
+    $stmt->execute();
+}
+
+function addCounter($db, $id_institusi, $counter, $year) {
+    $query = "INSERT INTO `surat_counter`(id_institusi, counter, year) VALUES(:id_institusi, :counter, :year)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(':id_institusi', $id_institusi);
+    $stmt->bindValue(':counter', $counter);
+    $stmt->bindValue(':year', $year);
+    $stmt->execute();
 }
 
 function rejectSurat() {
