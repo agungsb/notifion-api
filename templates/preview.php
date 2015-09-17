@@ -66,23 +66,6 @@ function previewSurat() {
 
 //content PDF
     setlocale(LC_ALL, 'IND');
-//$nosurat = '999/UN.39.18/TU/15';
-//$tanggal = strftime("%d %B %Y");
-//    $lam = '2';
-//$hal = 'Pengajuan Peminjaman Scanner';
-    $tujuan = 'KEPALA BIRO ADM. UMUM dan KEUANGAN (BAUK)';
-//$tujuan2 = 'KEPALA BIRO PERENCANAAN & SISTEM INFORMASI (BAPSI)';
-    $tujuan3 = 'KA. UPT PERPUSTAKAAN';
-//$tjb = 'Ka. Pustikom';
-    $nip = '197408242005011001';
-//$nama_pejabat = 'Hamidillah Adjie, ST';
-//a. first
-//$pdf->Cell(0, 0, 'Nomor                 :  '.$tes.'                                                                    '.$tanggal.'', 0, false, 'L', 0, '', 0, false, 'M', 'M');
-//$pdf->Ln(6);
-//$pdf->Cell(0, 0, 'Lamp                   :', 0, false, 'L', 0, '', 0, false, 'M', 'M');
-//$pdf->Ln(6);
-//$pdf->Cell(0, 0, 'Hal                   :', 0, false, 'L', 0, '', 0, false, 'M', 'M');
-//$pdf->Ln(6);
 
     $pdf->Ln(55);
     $pdf->SetFont('times', '', 12);

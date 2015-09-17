@@ -24,6 +24,7 @@ require 'db.php';
 require 'JWT.php';
 require 'templates/home.php';
 require 'templates/preview.php';
+require 'templates/preview2.php';
 require 'templates/view.php';
 
 include_once 'GCM.php';
@@ -74,6 +75,7 @@ $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
 $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
 $app->post('/preview', 'previewSurat');
+$app->post('/preview2', 'preview2');
 $app->get('/view/:id/:token', 'viewSurat');
 $app->post('/login', 'authLogin');
 $app->post('/registerGCMUser', 'registerGCMUser');
@@ -83,6 +85,21 @@ $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
+$app->post('/test', 'setTest');
+
+function setTest(){
+    
+    global $app;
+
+    $app->response->headers->set("Content-Type", "text/html");
+
+    $req = json_decode($app->request()->getBody(), TRUE);
+    $paramIsiSurat = $req['isi'];
+    
+    echo $paramIsiSurat;
+    
+    print_r($req);
+}
 
 /**
  * Step 4: Run the Slim application
@@ -140,13 +157,13 @@ function getPenandatangan($token) {
 
     try {
         $db = getDB();
-        $query = "SELECT jabatan.*, institusi.nama_institusi FROM jabatan, institusi WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = :id_institusi AND institusi.id_institusi = jabatan.id_institusi";
+        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = :id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_institusi = users.id_institusi";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi']);
+            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi'], "nip" => $row['nip'], "nama" => $row['nama']);
             $i++;
         }
         $db = null;
@@ -563,19 +580,12 @@ function submitSurat() {
         $paramNosurat = $req['nosurat'];
         $paramLampiran = $req['lampiran'];
         $paramHal = $req['hal'];
-        $paramIsi = $req['isi'];
-        $paramTembusan = $req['tembusan'];
+        $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
         $paramTanggalSurat = $req['tanggal_surat'];
 
         $timezone_identifier = "Asia/Jakarta";
         date_default_timezone_set($timezone_identifier);
         $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
-
-        $tembusan = "";
-        for ($i = 0; $i < count($paramTembusan) - 1; $i++) {
-            $tembusan .= $paramTembusan[$i]['identifier'] . "@+id/";
-        }
-        $tembusan .= $paramTembusan[$i]['identifier'];
 
         $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat)";
 
@@ -588,13 +598,23 @@ function submitSurat() {
         $stmt->bindValue(":lampiran", (int) $paramLampiran, PDO::PARAM_INT);
         $stmt->bindValue(":hal", $paramHal);
         $stmt->bindValue(":isi", $paramIsi);
-        $stmt->bindValue(":tembusan", $tembusan);
+        $paramTembusan = $req['tembusan'];
+        if ($paramTembusan != null) {
+            $tembusan = "";
+            for ($i = 0; $i < (count($paramTembusan) - 1); $i++) {
+                $tembusan .= $paramTembusan[$i]['identifier'] . "@+id/";
+            }
+            $tembusan .= $paramTembusan[$i]['identifier'];
+            $stmt->bindValue(":tembusan", $tembusan);
+        } else {
+            $stmt->bindValue(":tembusan", "");
+        }
         $stmt->bindValue(":tanggal_surat", $tanggal_surat);
 
         try {
             $stmt->execute();
             $registration_ids = array();
-            if (!empty(pushNotification($db, $penandatangan))) {
+            if ((pushNotification($db, $penandatangan)) != null) {
                 $registration_ids = pushNotification($db, $penandatangan);
             }
 
@@ -766,7 +786,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
         if (!empty($tujuan[$i])) {
 //            echo $id_surat . " - " . $tujuan[$i] . " - " . $tembusan . " <br/>";
             kirimSurat($db, $id_surat, $tujuan[$i], $tembusan);
-            if (!empty(pushNotification($db, $tujuan[$i]))) {
+            if ((pushNotification($db, $tujuan[$i])) != null) {
                 $registration_ids = pushNotification($db, $tujuan[$i]);
             }
         }
