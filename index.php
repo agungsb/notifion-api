@@ -23,8 +23,8 @@ require 'config.php';
 require 'db.php';
 require 'JWT.php';
 require 'templates/home.php';
-require 'templates/createAttach.php';
 require 'templates/preview.php';
+require 'templates/preview2.php';
 require 'templates/view.php';
 
 include_once 'GCM.php';
@@ -76,16 +76,31 @@ $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
 $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
 $app->post('/preview', 'previewSurat');
+$app->post('/preview2', 'preview2');
 $app->get('/view/:id/:token', 'viewSurat');
 $app->post('/login', 'authLogin');
 $app->post('/registerGCMUser', 'registerGCMUser');
 $app->post('/unregisterGCMUser', 'unregisterGCMUser');
 $app->post('/submitSurat', 'submitSurat');
-$app->post('/kirimEmail', 'kirimEmail');
 $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
+$app->post('/test', 'setTest');
+
+function setTest(){
+    
+    global $app;
+
+    $app->response->headers->set("Content-Type", "text/html");
+
+    $req = json_decode($app->request()->getBody(), TRUE);
+    $paramIsiSurat = $req['isi'];
+    
+    echo $paramIsiSurat;
+    
+    print_r($req);
+}
 
 /**
  * Step 4: Run the Slim application
@@ -143,13 +158,13 @@ function getPenandatangan($token) {
 
     try {
         $db = getDB();
-        $query = "SELECT jabatan.*, institusi.nama_institusi FROM jabatan, institusi WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = :id_institusi AND institusi.id_institusi = jabatan.id_institusi";
+        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = :id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_institusi = users.id_institusi";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi']);
+            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi'], "nip" => $row['nip'], "nama" => $row['nama']);
             $i++;
         }
         $db = null;
@@ -566,19 +581,12 @@ function submitSurat() {
         $paramNosurat = $req['nosurat'];
         $paramLampiran = $req['lampiran'];
         $paramHal = $req['hal'];
-        $paramIsi = $req['isi'];
-        $paramTembusan = $req['tembusan'];
+        $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
         $paramTanggalSurat = $req['tanggal_surat'];
 
         $timezone_identifier = "Asia/Jakarta";
         date_default_timezone_set($timezone_identifier);
         $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
-
-        $tembusan = "";
-        for ($i = 0; $i < count($paramTembusan) - 1; $i++) {
-            $tembusan .= $paramTembusan[$i]['identifier'] . "@+id/";
-        }
-        $tembusan .= $paramTembusan[$i]['identifier'];
 
         $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat)";
 
@@ -591,23 +599,29 @@ function submitSurat() {
         $stmt->bindValue(":lampiran", (int) $paramLampiran, PDO::PARAM_INT);
         $stmt->bindValue(":hal", $paramHal);
         $stmt->bindValue(":isi", $paramIsi);
-        $stmt->bindValue(":tembusan", $tembusan);
+        $paramTembusan = $req['tembusan'];
+        if ($paramTembusan != null) {
+            $tembusan = "";
+            for ($i = 0; $i < (count($paramTembusan) - 1); $i++) {
+                $tembusan .= $paramTembusan[$i]['identifier'] . "@+id/";
+            }
+            $tembusan .= $paramTembusan[$i]['identifier'];
+            $stmt->bindValue(":tembusan", $tembusan);
+        } else {
+            $stmt->bindValue(":tembusan", "");
+        }
         $stmt->bindValue(":tanggal_surat", $tanggal_surat);
 
         try {
-//            $stmt->execute();
-            
-//            $registration_ids = array();
-//            if ((pushNotification($db, $penandatangan)) != null) {
-//                $registration_ids = pushNotification($db, $penandatangan);
-//            }
-//
-//            $gcm = new GCM();
-//            $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
-//            $result = $gcm->send_notification($registration_ids, $pesan);
+            $stmt->execute();
+            $registration_ids = array();
+            if ((pushNotification($db, $penandatangan)) != null) {
+                $registration_ids = pushNotification($db, $penandatangan);
+            }
 
-            createAttachment($paramSubject, $tujuan, $paramIdInstitusi, $penandatangan, $paramNosurat, (int) $paramLampiran, $paramHal, $paramIsi, $tembusan, $tanggal_surat);
-            
+            $gcm = new GCM();
+            $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
+            $result = $gcm->send_notification($registration_ids, $pesan);
             echo '{"result": "success"}';
         } catch (PDOException $ex) {
 //            echo $ex->getMessage();
@@ -850,47 +864,4 @@ function convertDate($date) {
 function listBulan($index) {
     $bulan = array("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember");
     return $bulan[$index - 1];
-}
-
-function kirimEmail() {
-//    echo 'Kirim Email';
-    require_once 'PHPMailer/PHPMailerAutoload.php';
-    require_once('tcpdf/tcpdf.php');
-
-    global $app;
-    $req = json_decode($app->request()->getBody(), true);
-
-//    $paramSender = $req['sender'];
-    $paramReceiver = $req['receiver'];
-    $paramSubject = $req['subject_surat'];
-
-    $nama_file = $paramSubject . '.pdf';
-    $pdf->Output('$nama_file', 'I');
-    echo $paramSubject . "-" . $paramReceiver;
-
-    $mail = new PHPMailer(); // create a new object
-    $mail->IsSMTP(); // enable SMTP
-    //$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
-    $mail->SMTPAuth = true; // authentication enabled
-    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
-    $mail->Host = "smtp.gmail.com";
-    $mail->Port = 465; // or 587
-    $mail->IsHTML(true);
-    $mail->Username = "firdaus.ibnuu@gmail.com";
-    $mail->Password = "firdausibnu21";
-    $mail->SetFrom("PDF");
-    $mail->Subject = "$paramSubject";
-    $mail->Body = "Test PDF.";
-//$email = 'akbar.kusuma@zentum-intizhara.com';
-    $email = $paramReceiver;
-    $mail->addStringAttachment($output, $nama_file);
-    $mail->AddAddress($email);
-    if (!$mail->Send()) {
-        echo "<script type='text/javascript'>alert('GAGAL MENGIRIM EMAIL.');</script>";
-        //header("refresh: 0;url=index.php");
-        $mail->ErrorInfo;
-    } else {
-        echo "<script type='text/javascript'>alert('BERHASIL MENGIRIM EMAIL.');</script>";
-        //header("refresh: 0;url=index.php");
-    }
 }
