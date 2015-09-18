@@ -31,6 +31,7 @@ function preview2() {
     $timezone_identifier = "Asia/Jakarta";
     date_default_timezone_set($timezone_identifier);
     $tanggal_surat = convertDate(date('Y-m-d', strtotime($paramTanggalSurat)));
+    $db = null;
 
 
 // add a page

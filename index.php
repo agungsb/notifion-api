@@ -83,25 +83,11 @@ $app->post('/login', 'authLogin');
 $app->post('/registerGCMUser', 'registerGCMUser');
 $app->post('/unregisterGCMUser', 'unregisterGCMUser');
 $app->post('/submitSurat', 'submitSurat');
+$app->post('/editBio', 'editBio');
 $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
-$app->post('/test', 'setTest');
-
-function setTest() {
-
-    global $app;
-
-    $app->response->headers->set("Content-Type", "text/html");
-
-    $req = json_decode($app->request()->getBody(), TRUE);
-    $paramIsiSurat = $req['isi'];
-
-    echo $paramIsiSurat;
-
-    print_r($req);
-}
 
 /**
  * Step 4: Run the Slim application
@@ -208,6 +194,7 @@ function getAllSurats($token, $offset, $limit) {
     } else {
         $output = [];
     }
+    $db = null;
     echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
 }
 
@@ -235,6 +222,7 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     } else {
         $output = [];
     }
+    $db = null;
     echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
 }
 
@@ -262,6 +250,7 @@ function getAllSuratsDraft($token, $offset, $limit) {
     } else {
         $output = [];
     }
+    $db = null;
     echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
 }
 
@@ -298,6 +287,7 @@ function getAllFavorites($token, $offset, $limit) {
     } else {
         $output = [];
     }
+    $db = null;
     echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
 }
 
@@ -370,6 +360,7 @@ function countFavorites($token) {
     $stmt->bindValue(":idJabatan", $id_jabatan);
     $stmt->bindValue(":isFavorite", 1, PDO::PARAM_INT);
     $stmt->execute();
+    $db = null;
     return $stmt->rowCount();
 }
 
@@ -388,6 +379,7 @@ function countUnreads($token) {
     $stmt->bindValue(":account", $account);
     $stmt->bindValue(":idJabatan", $id_jabatan);
     $stmt->execute();
+    $db = null;
     return $stmt->rowCount();
 }
 
@@ -403,6 +395,7 @@ function countUnsigned($token) {
     $stmt->bindValue(":account", $account);
     $stmt->bindValue(":idJabatan", $id_jabatan);
     $stmt->execute();
+    $db = null;
     return $stmt->rowCount();
 }
 
@@ -442,6 +435,7 @@ function checkUsersJabatan($token) {
     } else {
         $output = array('status' => false);
     }
+    $db = null;
     return json_encode($output);
 }
 
@@ -455,6 +449,7 @@ function getAllPejabats() {
         $output[$i] = array("nama" => $row['nama'], "account" => $row['account'], "jabatan" => $row['jabatan']);
         $i++;
     }
+    $db = null;
     echo json_encode($output);
 }
 
@@ -468,6 +463,7 @@ function getKodeHals() {
         $output[$i] = array("deskripsi" => $row['deskripsi'], "kode_hal" => $row['kode_hal']);
         $i++;
     }
+    $db = null;
     echo '{"result": ' . json_encode($output) . '}';
 //    echo json_encode($output);
 }
@@ -502,6 +498,7 @@ function authLogin() {
 //            $output = array('status' => false, 'message' => $paramAccount . ' - ' . $paramPassword);
             $output = array('status' => false, 'header' => $_SERVER['CONTENT_TYPE'], 'message' => $paramAccount . ' - ' . $paramPassword);
         }
+        $db = null;
         echo json_encode($output);
     } catch (PDOException $e) {
         echo "{'error':{text':'" . $e->getMessage() . "'}}";
@@ -534,6 +531,7 @@ function verifyGCMUser($gcm_regid) {
     $db = getDB();
     $stmt = $db->prepare($query);
     $stmt->execute();
+    $db = null;
     return $stmt->rowCount();
 }
 
@@ -542,6 +540,7 @@ function createGCMUser($gcm_regid, $account) {
     $db = getDB();
     $stmt = $db->prepare($query);
     $stmt->execute();
+    $db = null;
 }
 
 function updateGCMUser($gcm_regid, $account) {
@@ -549,6 +548,7 @@ function updateGCMUser($gcm_regid, $account) {
     $db = getDB();
     $stmt = $db->prepare($query);
     $stmt->execute();
+    $db = null;
 }
 
 function unregisterGCMUser() {
@@ -568,6 +568,46 @@ function deleteGCMUser($gcm_regid) {
     $db = getDB();
     $stmt = $db->prepare($query);
     $stmt->execute();
+    $db = null;
+}
+
+function editBio() {
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+    $token = $req['token'];
+    $paramNama = $req['nama'];
+    $paramGender = $req['gender'];
+    $paramPassword = $req['password'];
+    $paramNip = $req['nip'];
+    $paramEmail1 = $req['email1'];
+    $paramEmail2 = $req['email2'];
+    $paramNohp1 = $req['nohp1'];
+    $paramNohp2 = $req['nohp2'];
+
+
+    $decode = JWT::decode($token, TK);
+    $akun = $decode->account;
+    
+    $query = "UPDATE `users` SET nama=:nama, password=:password, gender=:jeniskelamin, nip=:nip, email1=:email1, email2=:email2, nohp1=:nohp1, nohp2=:nohp2 WHERE account=:account";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":nama", $paramNama);
+    $stmt->bindValue(":password", $paramPassword);
+    $stmt->bindValue(":nip", $paramNip);
+    $stmt->bindValue(":jeniskelamin", $paramGender);
+    $stmt->bindValue(":email1", $paramEmail1);
+    $stmt->bindValue(":email2", $paramEmail2);
+    $stmt->bindValue(":nohp1", $paramNohp1);
+    $stmt->bindValue(":nohp2", $paramNohp2);
+    $stmt->bindValue(":account", $akun);
+    
+    $stmt->execute();
+    if($stmt){
+        echo '{"result": "Success"}';
+    }else{
+        echo '{"result": "there is something wrong}';
+    }
 }
 
 function submitSurat() {
@@ -647,6 +687,7 @@ function submitSurat() {
     } else {
         echo '{"result": "error"}';
     }
+    $db = null;
 }
 
 function getKodeUnit($db, $id_institusi) {
@@ -656,6 +697,7 @@ function getKodeUnit($db, $id_institusi) {
     $stmt->execute();
     $row = $stmt->fetch();
     return $row['kode_unit'];
+    $db = null;
 }
 
 function checkCounter($db, $id_institusi, $is_preview) {
