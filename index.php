@@ -67,6 +67,7 @@ $app->delete('/delete', function () {
 );
 
 $app->get('/users', 'getAllUsers');
+$app->get('/users2', 'getAllUsersOP');
 $app->get('/tujuan', 'getTujuan');
 $app->get('/penandatangan/:token', 'getPenandatangan');
 $app->get('/user/:token', 'getUser');
@@ -77,6 +78,7 @@ $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
 $app->get('/kodeHals', 'getKodeHals');
 $app->get('/instansi', 'getInstansi');
+$app->get('/checkIdInstansi', 'checkIdInstansi');
 $app->get('/institusi', 'getInstitusi');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
@@ -86,6 +88,9 @@ $app->post('/registerGCMUser', 'registerGCMUser');
 $app->post('/unregisterGCMUser', 'unregisterGCMUser');
 $app->post('/submitSurat', 'submitSurat');
 $app->post('/editBio', 'editBio');
+$app->post('/addUserOp', 'addUserOp');
+$app->post('/addInstansi', 'addInstansi');
+$app->post('/addInstitusi', 'addInstitusi');
 $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
@@ -107,7 +112,22 @@ function getAllUsers() {
         $stmt->execute();
         $output = $stmt->fetchAll(PDO::FETCH_OBJ);
         $db = null;
-        echo json_encode($output);
+        echo '{"result": ' . json_encode($output) . '}';
+    } catch (PDOException $e) {
+//error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
+        echo "{'error':{text':'" . $e->getMessage() . "'}}";
+    }
+}
+
+function getAllUsersOP() {
+    $sql = "SELECT users.* FROM users WHERE jenis_user='2'";
+    try {
+        $db = getDB();
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $output = $stmt->fetchAll(PDO::FETCH_OBJ);
+        $db = null;
+        echo '{"result": ' . json_encode($output) . '}';
     } catch (PDOException $e) {
 //error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
         echo "{'error':{text':'" . $e->getMessage() . "'}}";
@@ -471,9 +491,9 @@ function getKodeHals() {
 }
 
 function getInstansi() {
-    
+
     $db = getDB();
-    $query = "SELECT instansi.* FROM instansi";
+    $query = "SELECT instansi.* FROM instansi WHERE id_instansi!='000'";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $i = 0;
@@ -482,12 +502,12 @@ function getInstansi() {
         $i++;
     }
     $db = null;
-    echo '{"result": ' . json_encode($output) . '}';
+    echo '{"result_Instansi": ' . json_encode($output) . '}';
 }
 
-function getInstitusi(){
+function getInstitusi() {
     $db = getDB();
-    $query = "SELECT institusi.* FROM institusi";
+    $query = "SELECT * FROM institusi WHERE id_instansi !='000'";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $i = 0;
@@ -496,7 +516,7 @@ function getInstitusi(){
         $i++;
     }
     $db = null;
-    echo '{"result": ' . json_encode($output) . '}';
+    echo '{"result_Institusi": ' . json_encode($output) . '}';
 }
 
 function authLogin() {
@@ -634,6 +654,118 @@ function editBio() {
     $stmt->bindValue(":account", $akun);
 
     $stmt->execute();
+    $db = null;
+    if ($stmt) {
+        echo '{"result": "Success"}';
+    } else {
+        echo '{"result": "there is something wrong}';
+    }
+}
+
+function addUserOp() {
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+    $paramAccount = $req['account'];
+    $paramPassword = $req['password'];
+    $paramInstitusi = $req['institusi'];
+
+    $sql = "SELECT users.* from users WHERE jenis_user='2'";
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+//    $row = $stmt->fetch();
+//    $tempAccount = $row['account']; //pengecekan masih single, kalo lebih dari 1 ?
+    $rowCount = $stmt->rowCount();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $tempAccount[$i] = $row['account'];
+        $i++;
+    }
+
+    for ($j = 0; $j < count($tempAccount); $j++) {
+        if ($tempAccount[$j] != $paramAccount) {
+            $query = "INSERT into users (account, password, jenis_user, id_institusi) VALUES (:account, :password, '2', :institusi)";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(":account", $paramAccount);
+            $stmt->bindValue(":password", $paramPassword);
+            $stmt->bindValue(":institusi", "00" . $paramInstitusi);
+            $stmt->execute();
+        } else {
+            echo '{"result": "Account Sudah Ada"}';
+        }
+    }
+    $db = null;
+}
+
+function addInstansi() {
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+    $instansi = json_decode(checkIdInstansi());
+    $paramIdInstansi = $instansi->id_instansi;
+    $paramIdInstansiNew = tambah0($paramIdInstansi, 1);
+
+    $paramInstansi = $req['nama_instansi'];
+
+    $query = "INSERT INTO instansi (id_instansi, nama_instansi) VALUES (:id_instansi, :nama_instansi)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
+    $stmt->bindValue(":nama_instansi", $paramInstansi);
+    $stmt->execute();
+    if ($stmt) {
+        echo '{"result": "Success"}';
+    } else {
+        echo '{"result": "there is something wrong}';
+    }
+}
+
+function checkIdInstansi() {
+    $db = getDB();
+    $query = "SELECT * FROM instansi WHERE id_instansi !='000' ORDER BY  `instansi`.`id_instansi` DESC ";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch();
+        $output = array("id_instansi" => $row['id_instansi'], "nama_instansi" => $row['nama_instansi']);
+    } else {
+        $output = array('status' => false);
+    }
+    $db = null;
+    return json_encode($output);
+}
+
+function addInstitusi() {
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+    $paramNamaInstitusi = $req['nama_institusi'];
+    $paramIdInstansi = $req['id_instansi'];
+
+    $paramIdInstansiNew = tambah0($paramIdInstansi, 0);
+
+    $sql = "SELECT id_institusi from institusi WHERE id_instansi =:id_instansi";
+    $stmt2 = $db->prepare($sql);
+    $stmt2->bindValue(":id_instansi", $paramIdInstansiNew);
+    $stmt2->execute();
+    $rowCount = $stmt2->rowCount();
+    $i = 0;
+    while ($row = $stmt2->fetch()) {
+        $paramIdInstitusi[$i] = $row['id_institusi'];
+        $i++;
+    }
+
+    $paramIdInsititusiNew = tambah0($paramIdInstansiNew, 0) . tambah0(intval(substr($paramIdInstitusi[$rowCount - 1], -3)) + 1, 0);
+//    echo $paramIdInsititusiNew;
+//    die();
+    $query = "INSERT INTO institusi (id_instansi, nama_institusi, id_institusi) VALUES (:id_instansi, :nama_institusi, :id_institusi)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
+    $stmt->bindValue(":nama_institusi", $paramNamaInstitusi);
+    $stmt->bindValue(":id_institusi", $paramIdInsititusiNew);
+    $stmt->execute();
     if ($stmt) {
         echo '{"result": "Success"}';
     } else {
@@ -727,7 +859,7 @@ function getKodeUnit($db, $id_institusi) {
     $stmt->bindValue(":id_institusi", $id_institusi);
     $stmt->execute();
     $row = $stmt->fetch();
-    return $row['kode_unit'];
+    return $row['kode_unit']; //kode unit dari id_institusi di tabel surat_kode_unit
     $db = null;
 }
 
@@ -1009,4 +1141,32 @@ function convertDate($date) {
 function listBulan($index) {
     $bulan = array("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember");
     return $bulan[$index - 1];
+}
+
+function tambah0($input, $inc) {
+    if (strlen(intval($input)) == 1) {
+        if (intval($input) != 9) {
+            $out = '00';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        } else {
+            $out = '0';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        }
+    } else if (strlen(intval($input)) == 2) {
+        if (intval($input) != 99) {
+            $out = '0';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        } else {
+            $out = '';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        }
+    } else if (strlen(intval($input)) == 3) {
+        $out = '';
+        $input = $out . (intval($input) + $inc);
+        return $input;
+    }
 }
