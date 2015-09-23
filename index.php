@@ -76,6 +76,8 @@ $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
 $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
 $app->get('/kodeHals', 'getKodeHals');
+$app->get('/instansi', 'getInstansi');
+$app->get('/institusi', 'getInstitusi');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
 $app->get('/view/:id/:token', 'viewSurat');
@@ -468,6 +470,35 @@ function getKodeHals() {
 //    echo json_encode($output);
 }
 
+function getInstansi() {
+    
+    $db = getDB();
+    $query = "SELECT instansi.* FROM instansi";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_instansi" => $row['id_instansi'], "nama_instansi" => $row['nama_instansi']);
+        $i++;
+    }
+    $db = null;
+    echo '{"result": ' . json_encode($output) . '}';
+}
+
+function getInstitusi(){
+    $db = getDB();
+    $query = "SELECT institusi.* FROM institusi";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_institusi" => $row['id_institusi'], "nama_institusi" => $row['nama_institusi'], "id_instansi" => $row['id_instansi']);
+        $i++;
+    }
+    $db = null;
+    echo '{"result": ' . json_encode($output) . '}';
+}
+
 function authLogin() {
     global $app;
 
@@ -589,7 +620,7 @@ function editBio() {
 
     $decode = JWT::decode($token, TK);
     $akun = $decode->account;
-    
+
     $query = "UPDATE `users` SET nama=:nama, password=:password, gender=:jeniskelamin, nip=:nip, email1=:email1, email2=:email2, nohp1=:nohp1, nohp2=:nohp2 WHERE account=:account";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":nama", $paramNama);
@@ -601,11 +632,11 @@ function editBio() {
     $stmt->bindValue(":nohp1", $paramNohp1);
     $stmt->bindValue(":nohp2", $paramNohp2);
     $stmt->bindValue(":account", $akun);
-    
+
     $stmt->execute();
-    if($stmt){
+    if ($stmt) {
         echo '{"result": "Success"}';
-    }else{
+    } else {
         echo '{"result": "there is something wrong}';
     }
 }
