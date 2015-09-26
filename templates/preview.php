@@ -6,12 +6,12 @@ function previewSurat() {
     $app->response->headers->set("Content-Type", "application/pdf");
 //include header
     include 'headerpdf.php';
-    
+
     $req = json_decode($app->request->getBody(), true);
 
     $token = $req['token'];
     $id = $req['id'];
-    
+
     $decode = JWT::decode($token, TK);
 
     $account = $decode->account;
@@ -19,7 +19,7 @@ function previewSurat() {
 
     $dbh = getDB();
 
-    $query = "SELECT surat.*, surat_kode_hal.deskripsi, users.nama, jabatan.jabatan from surat, surat_kode_hal, users, jabatan WHERE surat.id_surat=:id_surat AND (surat.penandatangan = :id_jabatan OR surat.penandatangan = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat.penandatangan = users.account) OR (surat.penandatangan = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
+    $query = "SELECT surat.*, surat_kode_hal.deskripsi, users.nama, users.nip, jabatan.jabatan from surat, surat_kode_hal, users, jabatan WHERE surat.id_surat=:id_surat AND (surat.penandatangan = :id_jabatan OR surat.penandatangan = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat.penandatangan = users.account) OR (surat.penandatangan = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
 
     $stmt = $dbh->prepare($query);
     $stmt->bindValue(':id_surat', (int) $id, PDO::PARAM_INT);
@@ -30,19 +30,22 @@ function previewSurat() {
 
         $row = $stmt->fetch();
 
-        $hal = $row['deskripsi']; // Mendapatkan deskripsi dari HAL
+        $hal = $row['subject_surat']; // Mendapatkan deskripsi dari HAL
         $input = $row['isi']; // Mendapatkan isi dari surat
         $tjb = $row['jabatan'];
         $lam = $row['lampiran'];
         $nama_pejabat = $row['nama'];
         $nosurat = $row['no_surat'];
+        $nip = $row['nip'];
         $tanggal = convertDate($row['tanggal_surat']);
 
         // Cari nama user berdasarkan jabatan parameter 'tujuan' //
         $query2 = "SELECT users.nama FROM users WHERE users.id_jabatan = :tujuan OR users.account = :tujuan";
         $stmt2 = $dbh->prepare($query2);
         $tujuan = explode("@+id/", $row['tujuan']);
-        $tembusan = explode("@+id/", $row['tembusan']);
+        if ($row['tembusan'] != '') {
+            $tembusan = explode("@+id/", $row['tembusan']);
+        }
         $stmt2->bindValue(":tujuan", $tujuan[0]);
         try {
             $stmt2->execute();
@@ -104,16 +107,17 @@ function previewSurat() {
     $pdf->MultiCell(170, 0, 'NIP' . ".$nip.", 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
 
 //Tembusan
-    $pdf->setCellMargins(0, 10, 0, 0);
-    $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
-
-    $pdf->setCellMargins(0, 0, 0, 0);
-    for ($i = 0; $i < count($tembusan); $i++) {
-        if ($tembusan[$i] != '') {
-            $pdf->MultiCell(170, 0, ($i + 1) . '. ' . getJabatan($dbh, $tembusan[$i]), 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+    if ($tembusan == null) {
+        $pdf->MultiCell(170, 0, '', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+    } else {
+        $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+        for ($i = 0; $i < count($tembusan); $i++) {
+            if ($tembusan[$i] != '') {
+                $pdf->MultiCell(170, 0, getJabatan($dbh, $tembusan[$i]), 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+            }
         }
     }
-
+//    ($i + 1) . '. ' . 
 // create some HTMNomor                 : L content
 //$html = '<span style="text-align:justify;">a <u>abc</u> abcdefghijkl (abcdef) abcdefg <b>abcdefghi</b> a ((abc)) abcd <img src="images/logo_example.png" border="0" height="41" width="41" /> <img src="images/tcpdf_box.svg" alt="test alt attribute" width="80" height="60" border="0" /> abcdef abcdefg <b>abcdefghi</b> a abc abcd abcdef abcdefg <b>abcdefghi</b> a abc abcd abcdef abcdefg <b>abcdefghi</b> a <u>abc</u> abcd abcdef abcdefg <b>abcdefghi</b> a abc \(abcd\) abcdef abcdefg <b>abcdefghi</b> a abc \\\(abcd\\\) abcdef abcdefg <b>abcdefghi</b> a abc abcd abcdef abcdefg <b>abcdefghi</b> a abc abcd abcdef abcdefg <b>abcdefghi</b> a abc abcd abcdef abcdefg abcdefghi a abc abcd <a href="http://tcpdf.org">abcdef abcdefg</a> start a abc before <span style="background-color:yellow">yellow color</span> after a abc abcd abcdef abcdefg abcdefghi a abc abcd end abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi a abc abcd abcdef abcdefg abcdefghi<br />abcd abcdef abcdefg abcdefghi<br />abcd abcde abcdef</span>';
 //$html = "<span>Much playing will only make you happy temporarily</span>";
