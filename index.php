@@ -22,6 +22,7 @@
 require 'config.php';
 require 'db.php';
 require 'JWT.php';
+require 'templates/submitSurat.php';
 require 'templates/home.php';
 require 'templates/preview.php';
 require 'templates/preview2.php';
@@ -833,86 +834,6 @@ function addKodeUnit() {
     } else {
         echo '{"result": "gagal"}';
     }
-}
-
-function submitSurat() {
-    $db = getDB();
-    global $app;
-    $req = json_decode($app->request()->getBody(), true);
-
-    $paramToken = $req['token'];
-
-    $decode = JWT::decode($paramToken, TK);
-    if ($decode->valid) {
-        $paramSubject = $req['subject'];
-        $paramTujuan = $req['tujuan'];
-        $paramIdInstitusi = $decode->id_institusi;
-        $paramNamaInstitusi = $decode->nama_institusi;
-        $tujuan = "";
-        for ($i = 0; $i < count($paramTujuan); $i++) {
-            $tujuan .= $paramTujuan[$i]['identifier'] . "@+id/";
-        }
-        $paramPenandatangan = $req['penandatangan'];
-        $penandatangan = "";
-        for ($i = 0; $i < count($paramPenandatangan); $i++) {
-//            $penandatangan .= $paramPenandatangan[$i]['identifier'] . "@+id/";
-            $penandatangan = $paramPenandatangan[0]['identifier'];
-        }
-//        $paramNosurat = $req['nosurat'];
-        $paramLampiran = $req['lampiran'];
-        $paramHal = $req['hal'];
-        $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
-        $paramTanggalSurat = $req['tanggal_surat'];
-
-        $timezone_identifier = "Asia/Jakarta";
-        date_default_timezone_set($timezone_identifier);
-        $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
-
-        $nosurat = checkCounter($db, $paramIdInstitusi, false) . "/UN39." . getKodeUnit($db, $paramIdInstitusi) . "/" . $paramHal . "/" . date('y');
-
-        $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat)";
-
-        $stmt = $db->prepare($query);
-        $stmt->bindValue(":subject_surat", $paramSubject);
-        $stmt->bindValue(":tujuan", $tujuan);
-        $stmt->bindValue(":id_institusi", $paramIdInstitusi);
-        $stmt->bindValue(":penandatangan", $penandatangan);
-        $stmt->bindValue(":nosurat", $nosurat);
-        $stmt->bindValue(":lampiran", (int) $paramLampiran, PDO::PARAM_INT);
-        $stmt->bindValue(":hal", $paramHal);
-        $stmt->bindValue(":isi", $paramIsi);
-        $paramTembusan = $req['tembusan'];
-        if ($paramTembusan != null) {
-            $tembusan = "";
-            for ($i = 0; $i < (count($paramTembusan) - 1); $i++) {
-                $tembusan .= $paramTembusan[$i]['identifier'] . "@+id/";
-            }
-            $tembusan .= $paramTembusan[$i]['identifier'];
-            $stmt->bindValue(":tembusan", $tembusan);
-        } else {
-            $stmt->bindValue(":tembusan", "");
-        }
-        $stmt->bindValue(":tanggal_surat", $tanggal_surat);
-
-        try {
-            $stmt->execute();
-            $registration_ids = array();
-            if ((pushNotification($db, $penandatangan)) != null) {
-                $registration_ids = pushNotification($db, $penandatangan);
-            }
-
-            $gcm = new GCM();
-            $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
-            $result = $gcm->send_notification($registration_ids, $pesan);
-            echo '{"result": "success"}';
-        } catch (PDOException $ex) {
-//            echo $ex->getMessage();
-            echo '{"result": "error"}';
-        }
-    } else {
-        echo '{"result": "error"}';
-    }
-    $db = null;
 }
 
 function getKodeUnit($db, $id_institusi) {
