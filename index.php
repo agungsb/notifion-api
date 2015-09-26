@@ -26,6 +26,7 @@ require 'templates/home.php';
 require 'templates/preview.php';
 require 'templates/preview2.php';
 require 'templates/view.php';
+require 'templates/attachments.php';
 
 include_once 'GCM.php';
 
@@ -77,7 +78,7 @@ $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
 $app->get('/kodeHals', 'getKodeHals');
 $app->get('/instansi', 'getInstansi');
-$app->get('/checkIdInstansi', 'checkIdInstansi');
+$app->get('/checkIdInstansi', 'checkIdInstansi'); // testing only
 $app->get('/institusi', 'getInstitusi');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
@@ -90,6 +91,7 @@ $app->post('/editBio', 'editBio');
 $app->post('/addUserOp', 'addUserOp');
 $app->post('/addInstansi', 'addInstansi');
 $app->post('/addInstitusi', 'addInstitusi');
+$app->post('/attachments', 'saveAttachments'); // testing only
 $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
