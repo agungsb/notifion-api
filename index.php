@@ -66,6 +66,7 @@ $app->delete('/delete', function () {
     echo 'This is a DELETE route';
 });
 
+$app->get('/checkUserOp', 'checkUserOp');
 $app->get('/users', 'getAllUsers');
 $app->get('/users2', 'getAllUsersOP');
 $app->get('/tujuan', 'getTujuan');
@@ -77,6 +78,7 @@ $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
 $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
 $app->get('/kodeHals', 'getKodeHals');
+$app->get('/kodeUnits', 'getKodeUnits2');
 $app->get('/instansi', 'getInstansi');
 $app->get('/checkIdInstansi', 'checkIdInstansi'); // testing only
 $app->get('/institusi', 'getInstitusi');
@@ -91,6 +93,8 @@ $app->post('/editBio', 'editBio');
 $app->post('/addUserOp', 'addUserOp');
 $app->post('/addInstansi', 'addInstansi');
 $app->post('/addInstitusi', 'addInstitusi');
+$app->post('/addKodeHal', 'addKodeHal');
+$app->post('/addKodeUnit', 'addKodeUnit');
 $app->post('/attachments', 'saveAttachments'); // testing only
 $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
@@ -517,7 +521,7 @@ function getInstitusi() {
         $i++;
     }
     $db = null;
-    echo '{"result_Institusi": ' . json_encode($output) . '}';
+    echo '{"result": ' . json_encode($output) . '}';
 }
 
 function authLogin() {
@@ -668,35 +672,39 @@ function addUserOp() {
     global $app;
     $req = json_decode($app->request()->getBody(), true);
 
+    $checkUserOp = json_decode(checkUserOp($db));
+
     $paramAccount = $req['account'];
-    $paramPassword = $req['password'];
-    $paramInstitusi = $req['institusi'];
+//    $paramPassword = $req['password'];
+//    $paramInstitusi = $req['institusi'];
+
+
+    for ($i = 0; $i < count($checkUserOp); $i++) {
+//        echo $checkUserOp[$i]->account;
+        if ($paramAccount != $checkUserOp[$i]->account) {
+            echo 'belom ada';
+            break;
+        } else {
+            echo 'udah ada';
+            break;
+        }
+    }
+
+    $db = null;
+}
+
+function checkUserOp($db) {
 
     $sql = "SELECT users.* from users WHERE jenis_user='2'";
     $stmt = $db->prepare($sql);
     $stmt->execute();
-//    $row = $stmt->fetch();
-//    $tempAccount = $row['account']; //pengecekan masih single, kalo lebih dari 1 ?
-    $rowCount = $stmt->rowCount();
     $i = 0;
     while ($row = $stmt->fetch()) {
-        $tempAccount[$i] = $row['account'];
+        $output[$i] = array("account" => $row['account'], "id_institusi" => $row['id_institusi']);
         $i++;
     }
-
-    for ($j = 0; $j < count($tempAccount); $j++) {
-        if ($tempAccount[$j] != $paramAccount) {
-            $query = "INSERT into users (account, password, jenis_user, id_institusi) VALUES (:account, :password, '2', :institusi)";
-            $stmt = $db->prepare($query);
-            $stmt->bindValue(":account", $paramAccount);
-            $stmt->bindValue(":password", $paramPassword);
-            $stmt->bindValue(":institusi", "00" . $paramInstitusi);
-            $stmt->execute();
-        } else {
-            echo '{"result": "Account Sudah Ada"}';
-        }
-    }
-    $db = null;
+//    echo '{"result": ' . json_encode($output) . '}';
+    return json_encode($output);
 }
 
 function addInstansi() {
@@ -771,6 +779,54 @@ function addInstitusi() {
         echo '{"result": "Success"}';
     } else {
         echo '{"result": "there is something wrong}';
+    }
+}
+
+function addKodeHal() {
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+    $paramKodeHal = $req['kode_hal'];
+    $paramDeskripsi = $req['deskripsi'];
+
+    $query = "INSERT INTO surat_kode_hal(kode_hal, deskripsi) VALUES (:kodehal, :deskripsi)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":kodehal", $paramKodeHal);
+    $stmt->bindValue(":deskripsi", $paramDeskripsi);
+    $stmt->execute();
+
+    if ($stmt) {
+        echo '{"result": "sukses"}';
+    } else {
+        echo '{"result": "gagal"}';
+    }
+}
+
+function addKodeUnit() {
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+
+    $paramKodeUnit = $req['kode_unit'];
+    $paramDeskripsi = $req['deskripsi'];
+    $paramInstitusi = $req['id_institusi'];
+
+
+//    $paramInstitusiNew = tambah02($paramInstitusi, 0);
+
+
+    $query = "INSERT INTO surat_kode_unit(kode_unit, deskripsi, id_institusi) VALUES (:kodeunit, :deskripsi, :id_institusi)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":kodeunit", $paramKodeUnit);
+    $stmt->bindValue(":deskripsi", $paramDeskripsi);
+    $stmt->bindValue(":id_institusi", $paramInstitusi);
+
+    $stmt->execute();
+    if ($stmt) {
+        echo '{"result": "sukses"}';
+    } else {
+        echo '{"result": "gagal"}';
     }
 }
 
@@ -855,6 +911,9 @@ function submitSurat() {
 }
 
 function getKodeUnit($db, $id_institusi) {
+    $db = getDB();
+    global $app;
+
     $query = "SELECT surat_kode_unit.* FROM surat_kode_unit WHERE surat_kode_unit.id_institusi=:id_institusi";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_institusi", $id_institusi);
@@ -862,6 +921,20 @@ function getKodeUnit($db, $id_institusi) {
     $row = $stmt->fetch();
     return $row['kode_unit']; //kode unit dari id_institusi di tabel surat_kode_unit
     $db = null;
+}
+
+function getKodeUnits2() {
+    $db = getDB();
+    $query = "SELECT surat_kode_unit.* FROM surat_kode_unit";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("deskripsi" => $row['deskripsi'], "kode_unit" => $row['kode_unit'], "id_institusi" => $row['id_institusi']);
+        $i++;
+    }
+    $db = null;
+    echo '{"result": ' . json_encode($output) . '}';
 }
 
 function checkCounter($db, $id_institusi, $is_preview) {
@@ -1169,5 +1242,19 @@ function tambah0($input, $inc) {
         $out = '';
         $input = $out . (intval($input) + $inc);
         return $input;
+    }
+}
+
+function tambah02($input, $inc) {
+    if (strlen(intval($input)) == 4) {
+        if (intval($input) != 9) {
+            $out = '00';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        } else {
+            $out = '0';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        }
     }
 }
