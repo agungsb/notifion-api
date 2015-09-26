@@ -676,18 +676,23 @@ function addUserOp() {
 
     $paramAccount = $req['account'];
 //    $paramPassword = $req['password'];
-//    $paramInstitusi = $req['institusi'];
+    $paramInstitusi = $req['institusi'];
 
 
     for ($i = 0; $i < count($checkUserOp); $i++) {
 //        echo $checkUserOp[$i]->account;
-        if ($paramAccount != $checkUserOp[$i]->account) {
-            echo 'belom ada';
-            break;
+        if ($paramInstitusi != $checkUserOp[$i]->id_institusi) {
+            $check = 0;
         } else {
-            echo 'udah ada';
+            $check = 1;
             break;
         }
+    }
+    echo $check;
+    if($check == 0){
+        $query = "INSERT INTO users (account, password)";
+    }else{
+        
     }
 
     $db = null;
