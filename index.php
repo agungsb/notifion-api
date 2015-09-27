@@ -102,6 +102,7 @@ $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
+$app->delete('hapusUser/:token/:userid', 'hapusUser');
 
 /**
  * Step 4: Run the Slim application
@@ -110,6 +111,10 @@ $app->put('/setRead', 'setRead');
  * and returns the HTTP response to the HTTP client.
  */
 $app->run();
+
+function hapusUser($token, $userid) {
+    echo $token . "-" . $userid;
+}
 
 function getAllUsers() {
     $sql = "SELECT users.*, jabatan.* FROM users, jabatan";
@@ -534,7 +539,7 @@ function authLogin() {
     $paramAccount = $req['account']; // Getting parameter with names
     $paramPassword = $req['password']; // Getting parameter with names
 
-    $query = "SELECT users.user_id, users.account, users.nama, users.id_jabatan, jabatan.id_institusi, institusi.nama_institusi FROM `users`, `jabatan`, `institusi` WHERE users.account=:account AND users.password=:password AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
+    $query = "SELECT users.user_id, users.jenis_user, users.account, users.nama, users.id_jabatan, jabatan.id_institusi, institusi.nama_institusi FROM `users`, `jabatan`, `institusi` WHERE users.account=:account AND users.password=:password AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
     try {
         $db = getDB();
         $stmt = $db->prepare($query);
@@ -549,9 +554,10 @@ function authLogin() {
             $token['id_jabatan'] = $result['id_jabatan'];
             $token['id_institusi'] = $result['id_institusi'];
             $token['nama_institusi'] = $result['nama_institusi'];
+            $token['jenis_user'] = $result['jenis_user'];
             $token['valid'] = true;
             $encoded = JWT::encode($token, TK);
-            $output = array('status' => true, 'token' => $encoded, 'userid' => $result['user_id'], 'account' => $result['account'], 'nama' => $result['nama'], 'jabatan' => $result['id_jabatan'], 'institusi' => $result['id_institusi'], 'nama_institusi' => $result['nama_institusi']);
+            $output = array('status' => true, 'token' => $encoded, 'userid' => $result['user_id'], 'account' => $result['account'], 'nama' => $result['nama'], 'jabatan' => $result['id_jabatan'], 'institusi' => $result['id_institusi'], 'nama_institusi' => $result['nama_institusi'], 'jenis_user' => $result['jenis_user']);
         } else {
 //            $output = array('status' => false, 'message' => $paramAccount . ' - ' . $paramPassword);
             $output = array('status' => false, 'header' => $_SERVER['CONTENT_TYPE'], 'message' => $paramAccount . ' - ' . $paramPassword);
