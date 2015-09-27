@@ -22,6 +22,7 @@
 require 'config.php';
 require 'db.php';
 require 'JWT.php';
+require 'templates/submitSurat.php';
 require 'templates/home.php';
 require 'templates/preview.php';
 require 'templates/preview2.php';
@@ -66,7 +67,7 @@ $app->delete('/delete', function () {
     echo 'This is a DELETE route';
 });
 
-$app->get('/checkUserOp', 'checkUserOp');
+$app->get('/checkUserOp', 'checkUserOp'); //testing only
 $app->get('/users', 'getAllUsers');
 $app->get('/users2', 'getAllUsersOP');
 $app->get('/tujuan', 'getTujuan');
@@ -81,6 +82,7 @@ $app->get('/kodeHals', 'getKodeHals');
 $app->get('/kodeUnits', 'getKodeUnits2');
 $app->get('/instansi', 'getInstansi');
 $app->get('/checkIdInstansi', 'checkIdInstansi'); // testing only
+$app->get('/checkUserJabatan', 'checkUserJabatan'); // testing only
 $app->get('/institusi', 'getInstitusi');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
@@ -125,7 +127,7 @@ function getAllUsers() {
 }
 
 function getAllUsersOP() {
-    $sql = "SELECT users.* FROM users WHERE jenis_user='2'";
+    $sql = "SELECT users.*, institusi.nama_institusi from users, institusi WHERE jenis_user='2' AND users.id_institusi=institusi.id_institusi";
     try {
         $db = getDB();
         $stmt = $db->prepare($sql);
@@ -674,12 +676,14 @@ function addUserOp() {
 
     $checkUserOp = json_decode(checkUserOp($db));
 
-    $paramAccount = $req['account'];
-//    $paramPassword = $req['password'];
+    $paramPassword = $req['password'];
     $paramInstitusi = $req['institusi'];
 
+    $paramAccount = 'Operator' . $paramInstitusi;
 
-    for ($i = 0; $i < count($checkUserOp); $i++) {
+    $tiga = $paramInstitusi . '000';
+
+    for ($i = 0; $i < count($checkUserOp); $i++) { //pengecekan institusi yang belum ada operatornya
 //        echo $checkUserOp[$i]->account;
         if ($paramInstitusi != $checkUserOp[$i]->id_institusi) {
             $check = 0;
@@ -688,27 +692,84 @@ function addUserOp() {
             break;
         }
     }
-    echo $check;
-    if($check == 0){
-        $query = "INSERT INTO users (account, password)";
-    }else{
-        
+
+    if ($check == 0) {
+        $query = "INSERT INTO users (account, password, id_institusi, jenis_user) VALUES (:account, :password, :id_institusi, '2')";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":account", $paramAccount);
+        $stmt->bindValue(":password", $paramPassword);
+        $stmt->bindValue(":id_institusi", $paramInstitusi);
+        if ($stmt->execute()) {
+            $checkUserJab = json_decode(checkUserJabatan($db));
+            for ($i = 0; $i < count($checkUserJab); $i++) { //pengecekan institusi yang belum ada id_jabatannya
+                if ($checkUserJab[$i]->id_jabatan == "") {
+//                    echo "kosong";
+                    $check_jab = 0;
+                    $paramNamaInstitusi = $checkUserJab[$i]->Nama_institusi;
+//                    $paramIdInstitusi = $checkUserJab[$i]->id_institusi_Institusi;
+                } else {
+                    $check_jab = 1;
+                }
+            }
+            if ($check_jab == 0) {
+                $sql = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
+                $add_jab = $db->prepare($sql);
+                $add_jab->bindValue(":id_jabatan", $tiga);
+                $add_jab->bindValue(":id_institusi", $paramInstitusi);
+                $add_jab->bindValue(":jabatan", 'Operator ' . $paramNamaInstitusi);
+                if ($add_jab->execute()) {
+                    $namaNew = 'Operator_' . $paramNamaInstitusi;
+                    $idJabNew = "UPDATE users SET id_jabatan=:id_jabs_new WHERE account = '" . $paramAccount . "'";
+                    $add_jab_new = $db->prepare($idJabNew);
+                    $add_jab_new->bindValue(":id_jabs_new", $tiga);
+                    if ($add_jab_new->execute()) {
+                        $NamaNew = "UPDATE users SET account=:accountNew WHERE account = '" . $paramAccount . "'";
+                        $NamaNew2 = $db->prepare($NamaNew);
+                        $NamaNew2->bindValue(":accountNew", $namaNew);
+                        $NamaNew2->execute();
+                        echo '{"result": "Sukses Buat Account Operator"}';
+                    } else {
+                        echo '{"result": "Gagal Buat Account Operator"}';
+                    }
+                } else {
+                    echo '{"result": "Gagal tambah Jabatan 1"}';
+                }
+            } else {
+                echo '{"result": "Gagal tambah Jabatan 2"}';
+            }
+        }
+    } else {
+        echo '{"result": "Operator di institusi ini sudah ada"}';
     }
 
     $db = null;
 }
 
 function checkUserOp($db) {
-
-    $sql = "SELECT users.* from users WHERE jenis_user='2'";
+//$db = getDB();
+    $sql = "SELECT users.*, institusi.nama_institusi from users, institusi WHERE jenis_user='2' AND users.id_institusi=institusi.id_institusi";
     $stmt = $db->prepare($sql);
     $stmt->execute();
     $i = 0;
     while ($row = $stmt->fetch()) {
-        $output[$i] = array("account" => $row['account'], "id_institusi" => $row['id_institusi']);
+        $output[$i] = array("account" => $row['account'], "id_institusi" => $row['id_institusi'], "nama_institusi" => $row['nama_institusi']);
         $i++;
     }
 //    echo '{"result": ' . json_encode($output) . '}';
+    return json_encode($output);
+}
+
+function checkUserJabatan($db) {
+
+    $sql = "SELECT institusi.id_institusi, institusi.nama_institusi, users.id_jabatan from institusi, users WHERE institusi.id_institusi=users.id_institusi and jenis_user='2'";
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_institusi_Institusi" => $row['id_institusi'], "Nama_institusi" => $row['nama_institusi'], "id_jabatan" => $row['id_jabatan']);
+        $i++;
+    }
+//    echo '{"result": ' . json_encode($output) . '}';    
     return json_encode($output);
 }
 
@@ -833,86 +894,6 @@ function addKodeUnit() {
     } else {
         echo '{"result": "gagal"}';
     }
-}
-
-function submitSurat() {
-    $db = getDB();
-    global $app;
-    $req = json_decode($app->request()->getBody(), true);
-
-    $paramToken = $req['token'];
-
-    $decode = JWT::decode($paramToken, TK);
-    if ($decode->valid) {
-        $paramSubject = $req['subject'];
-        $paramTujuan = $req['tujuan'];
-        $paramIdInstitusi = $decode->id_institusi;
-        $paramNamaInstitusi = $decode->nama_institusi;
-        $tujuan = "";
-        for ($i = 0; $i < count($paramTujuan); $i++) {
-            $tujuan .= $paramTujuan[$i]['identifier'] . "@+id/";
-        }
-        $paramPenandatangan = $req['penandatangan'];
-        $penandatangan = "";
-        for ($i = 0; $i < count($paramPenandatangan); $i++) {
-//            $penandatangan .= $paramPenandatangan[$i]['identifier'] . "@+id/";
-            $penandatangan = $paramPenandatangan[0]['identifier'];
-        }
-//        $paramNosurat = $req['nosurat'];
-        $paramLampiran = $req['lampiran'];
-        $paramHal = $req['hal'];
-        $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
-        $paramTanggalSurat = $req['tanggal_surat'];
-
-        $timezone_identifier = "Asia/Jakarta";
-        date_default_timezone_set($timezone_identifier);
-        $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
-
-        $nosurat = checkCounter($db, $paramIdInstitusi, false) . "/UN39." . getKodeUnit($db, $paramIdInstitusi) . "/" . $paramHal . "/" . date('y');
-
-        $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat)";
-
-        $stmt = $db->prepare($query);
-        $stmt->bindValue(":subject_surat", $paramSubject);
-        $stmt->bindValue(":tujuan", $tujuan);
-        $stmt->bindValue(":id_institusi", $paramIdInstitusi);
-        $stmt->bindValue(":penandatangan", $penandatangan);
-        $stmt->bindValue(":nosurat", $nosurat);
-        $stmt->bindValue(":lampiran", (int) $paramLampiran, PDO::PARAM_INT);
-        $stmt->bindValue(":hal", $paramHal);
-        $stmt->bindValue(":isi", $paramIsi);
-        $paramTembusan = $req['tembusan'];
-        if ($paramTembusan != null) {
-            $tembusan = "";
-            for ($i = 0; $i < (count($paramTembusan) - 1); $i++) {
-                $tembusan .= $paramTembusan[$i]['identifier'] . "@+id/";
-            }
-            $tembusan .= $paramTembusan[$i]['identifier'];
-            $stmt->bindValue(":tembusan", $tembusan);
-        } else {
-            $stmt->bindValue(":tembusan", "");
-        }
-        $stmt->bindValue(":tanggal_surat", $tanggal_surat);
-
-        try {
-            $stmt->execute();
-            $registration_ids = array();
-            if ((pushNotification($db, $penandatangan)) != null) {
-                $registration_ids = pushNotification($db, $penandatangan);
-            }
-
-            $gcm = new GCM();
-            $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
-            $result = $gcm->send_notification($registration_ids, $pesan);
-            echo '{"result": "success"}';
-        } catch (PDOException $ex) {
-//            echo $ex->getMessage();
-            echo '{"result": "error"}';
-        }
-    } else {
-        echo '{"result": "error"}';
-    }
-    $db = null;
 }
 
 function getKodeUnit($db, $id_institusi) {
