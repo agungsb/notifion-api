@@ -1,6 +1,7 @@
 <?php
 
 function submitSurat() {
+    die();
     $db = getDB();
     global $app;
 //    $req = json_decode($app->request()->getBody(), true);

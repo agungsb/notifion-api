@@ -33,7 +33,6 @@ function preview2() {
     $tanggal_surat = convertDate(date('Y-m-d', strtotime($paramTanggalSurat)));
     $db = null;
 
-
 // add a page
 
     $pdf->AddPage();
