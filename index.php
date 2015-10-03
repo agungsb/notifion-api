@@ -102,6 +102,7 @@ $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
+$app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
 
 /**
@@ -133,6 +134,34 @@ function hapusUser($token, $account) {
         }
     } else {
         echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function editUser($token) {
+    global $app;
+    $db = getDB();
+
+    $req = json_decode($app->request()->getBody(), TRUE);
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    $paramPassword = $req['password']; // Getting parameter with names
+    
+    echo $paramPassword;
+    
+    die();
+
+
+    if ($jenis_user == '2') {
+        $query = "UPDATE users SET password=:password, id_institusi=:id_institusi WHERE account=:account";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":password", $account);
+        $stmt->bindValue(":id_institusi", $account);
+        if ($stmt->execute()) {
+            echo '{"result": "Sukses Hapus Account Operator"}';
+        } else {
+            echo '{"result": "Bukan Hak Nya"}';
+        }
     }
 }
 
@@ -522,6 +551,21 @@ function getKodeHals() {
 //    echo json_encode($output);
 }
 
+function checkKodeHal() {
+    $db = getDB();
+    $query = "SELECT surat_kode_hal.* FROM surat_kode_hal";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("deskripsi" => $row['deskripsi'], "kode_hal" => $row['kode_hal']);
+        $i++;
+    }
+    $db = null;
+//    echo '{"result": ' . json_encode($output) . '}';
+    return json_encode($output);
+}
+
 function getInstansi() {
 
     $db = getDB();
@@ -540,7 +584,7 @@ function getInstansi() {
 
 function getInstitusi() {
     $db = getDB();
-    $query = "SELECT * FROM institusi WHERE id_instansi !='000'";
+    $query = "SELECT * FROM institusi WHERE id_instansi !='000' and nama_institusi!='kosong'";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $i = 0;
@@ -829,7 +873,12 @@ function addInstansi() {
 
     $paramInstansi = $req['nama_instansi'];
     $paramIdInstansiNew = tambah0($paramIdInstansi, 1);
+    $newId = $paramIdInstansiNew . "000";
 
+//    echo $paramIdInstansiNew;
+//    echo '-';
+//    echo $newId;
+//    die();
     for ($i = 0; $i < count($checkNama); $i++) { //pengecekan institusi yang belum ada operatornya
 //        echo $checkUserOp[$i]->account;
         if ($paramInstansi != $checkNama[$i]->nama_instansi) {
@@ -839,7 +888,7 @@ function addInstansi() {
             break;
         }
     }
-
+    $param0 = 'kosong';
 //    echo $paramIdInstansiNew;
 //    echo '-'. $check;
 //    die();
@@ -849,6 +898,12 @@ function addInstansi() {
         $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
         $stmt->bindValue(":nama_instansi", $paramInstansi);
         if ($stmt->execute()) {
+            $sql = "INSERT INTO institusi (id_institusi, nama_institusi, id_instansi) VALUES (:id_institusi, :nama_institusi, :id_instansi)";
+            $stmt2 = $db->prepare($sql);
+            $stmt2->bindValue(":id_institusi", $newId);
+            $stmt2->bindValue(":nama_institusi", $param0);
+            $stmt2->bindValue(":id_instansi", $paramIdInstansiNew);
+            $stmt2->execute();
             echo '{"result": "Success"}';
         }
     } else {
@@ -897,7 +952,12 @@ function addInstitusi() {
     $paramIdInstansi = $req['id_instansi'];
 
     $paramIdInstansiNew = tambah0($paramIdInstansi, 0);
+    $newIdInstitusi = $paramIdInstansiNew . "000";
+    $namaNew = 'kosong';
 
+//    echo $newIdInstitusi;
+//
+//    die();
     for ($i = 0; $i < count($checkNamaInstitusi); $i++) { //pengecekan institusi yang belum ada operatornya
 //        echo $checkUserOp[$i]->account;
         if ($paramNamaInstitusi != $checkNamaInstitusi[$i]->nama_institusi) {
@@ -907,32 +967,57 @@ function addInstitusi() {
             break;
         }
     }
+
+    for ($i = 0; $i < count($checkNamaInstitusi); $i++) { //pengecekan institusi yang belum ada operatornya
+//        echo $checkUserOp[$i]->account;
+        if ($namaNew != $checkNamaInstitusi[$i]->nama_institusi) {
+            $check2 = 0;
+        } else {
+            $check2 = 1;
+            break;
+        }
+    }
+//    echo $paramIdInstansiNew;
+//    echo '-';
+//    echo $check2;
 //    
-//    echo $check;
-//    die();
-    if ($check == 0) {
+    if ($check == 0 && $check2 == 0) {
         $sql = "SELECT id_institusi from institusi WHERE id_instansi =:id_instansi";
         $stmt2 = $db->prepare($sql);
         $stmt2->bindValue(":id_instansi", $paramIdInstansiNew);
-        $stmt2->execute();
-        $rowCount = $stmt2->rowCount();
-        $i = 0;
-        while ($row = $stmt2->fetch()) {
-            $paramIdInstitusi[$i] = $row['id_institusi'];
-            $i++;
-        }
-
-        $paramIdInsititusiNew = tambah0($paramIdInstansiNew, 0) . tambah0(intval(substr($paramIdInstitusi[$rowCount - 1], -3)) + 1, 0);
+        if ($stmt2->execute()) {
+            $rowCount = $stmt2->rowCount();
+            $i = 0;
+            while ($row = $stmt2->fetch()) {
+                $paramIdInstitusi[$i] = $row['id_institusi'];
+                $i++;
+            }
+            $paramIdInsititusiNew = tambah0($paramIdInstansiNew, 0) . tambah0(intval(substr($paramIdInstitusi[$rowCount - 1], -3)) + 1, 0);
 //    echo $paramIdInsititusiNew;
 //    die();
-        $query = "INSERT INTO institusi (id_instansi, nama_institusi, id_institusi) VALUES (:id_instansi, :nama_institusi, :id_institusi)";
-        $stmt = $db->prepare($query);
-        $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
-        $stmt->bindValue(":nama_institusi", $paramNamaInstitusi);
-        $stmt->bindValue(":id_institusi", $paramIdInsititusiNew);
-        $stmt->execute();
-        if ($stmt) {
-            echo '{"result": "Berhasil Tambah Institusi"}';
+            $query = "INSERT INTO institusi (id_instansi, nama_institusi, id_institusi) VALUES (:id_instansi, :nama_institusi, :id_institusi)";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
+            $stmt->bindValue(":nama_institusi", $paramNamaInstitusi);
+            $stmt->bindValue(":id_institusi", $paramIdInsititusiNew);
+            if ($stmt->execute()) {
+                echo '{"result": "Berhasil Tambah Institusi"}';
+            }
+        }
+    } else if ($check == 0 && $check2 == 1) {
+        $sql3 = "SELECT id_institusi from institusi WHERE id_instansi =:id_instansi";
+        $stmt4 = $db->prepare($sql3);
+        $stmt4->bindValue(":id_instansi", $paramIdInstansiNew);
+        if ($stmt4->execute()) {
+            $sqlInstitusi = "UPDATE institusi SET nama_institusi=:newName WHERE id_institusi =:id_institusi and nama_institusi =:nama_institusi";
+            $update = $db->prepare($sqlInstitusi);
+            $update->bindValue(":newName", $paramNamaInstitusi);
+            $update->bindValue(":id_institusi", $newIdInstitusi);
+            $update->bindValue(":nama_institusi", 'kosong');
+            $update->execute();
+            echo '{"result": "sukses"}';
+        } else {
+            echo '{"result": "gagal check"}';
         }
     } else {
         echo '{"result": "Nama Institusi Sudah Ada"}';
@@ -944,19 +1029,30 @@ function addKodeHal() {
     global $app;
     $req = json_decode($app->request()->getBody(), true);
 
+    $checkKodeHal = json_decode(checkKodeHal());
     $paramKodeHal = $req['kode_hal'];
     $paramDeskripsi = $req['deskripsi'];
 
-    $query = "INSERT INTO surat_kode_hal(kode_hal, deskripsi) VALUES (:kodehal, :deskripsi)";
-    $stmt = $db->prepare($query);
-    $stmt->bindValue(":kodehal", $paramKodeHal);
-    $stmt->bindValue(":deskripsi", $paramDeskripsi);
-    $stmt->execute();
+    for ($i = 0; $i < count($checkKodeHal); $i++) { //pengecekan institusi yang belum ada operatornya
+//        echo $checkUserOp[$i]->account;
+        if ($paramKodeHal != $checkKodeHal[$i]->kode_hal) {
+            $check = 0;
+        } else {
+            $check = 1;
+            break;
+        }
+    }
 
-    if ($stmt) {
-        echo '{"result": "sukses"}';
+    if ($check == 0) {
+        $query = "INSERT INTO surat_kode_hal(kode_hal, deskripsi) VALUES (:kodehal, :deskripsi)";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":kodehal", $paramKodeHal);
+        $stmt->bindValue(":deskripsi", $paramDeskripsi);
+        if ($stmt->execute()) {
+            echo '{"result": "Sukses Tambah Kode Hal"}';
+        }
     } else {
-        echo '{"result": "gagal"}';
+        echo '{"result": "Kode Hal Sudah Terdaftar"}';
     }
 }
 
