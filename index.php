@@ -102,7 +102,7 @@ $app->put('/accSurat', 'accSurat');
 $app->put('/rejectSurat', 'rejectSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
-$app->delete('hapusUser/:token/:userid', 'hapusUser');
+$app->delete('/hapusUser/:token/:account', 'hapusUser');
 
 /**
  * Step 4: Run the Slim application
@@ -112,8 +112,28 @@ $app->delete('hapusUser/:token/:userid', 'hapusUser');
  */
 $app->run();
 
-function hapusUser($token, $userid) {
-    echo $token . "-" . $userid;
+function hapusUser($token, $account) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from users WHERE account=:account";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":account", $account);
+        if ($stmt->execute()) {
+            $sql = "DELETE from jabatan WHERE jabatan=:account";
+            $stmt2 = $db->prepare($sql);
+            $stmt2->bindValue(":account", $account);
+            $stmt2->execute();
+            echo '{"result": "Sukses Hapus Account Operator"}';
+        }
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
 }
 
 function getAllUsers() {
@@ -515,6 +535,7 @@ function getInstansi() {
     }
     $db = null;
     echo '{"result_Instansi": ' . json_encode($output) . '}';
+    return json_encode($output);
 }
 
 function getInstitusi() {
@@ -529,6 +550,21 @@ function getInstitusi() {
     }
     $db = null;
     echo '{"result": ' . json_encode($output) . '}';
+}
+
+function checkInstitusi() {
+    $db = getDB();
+    $query = "SELECT * FROM institusi WHERE id_instansi !='000'";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_institusi" => $row['id_institusi'], "nama_institusi" => $row['nama_institusi'], "id_instansi" => $row['id_instansi']);
+        $i++;
+    }
+    $db = null;
+//    echo '{"result": ' . json_encode($output) . '}';
+    return json_encode($output);
 }
 
 function authLogin() {
@@ -678,6 +714,7 @@ function editBio() {
 function addUserOp() {
     $db = getDB();
     global $app;
+
     $req = json_decode($app->request()->getBody(), true);
 
     $checkUserOp = json_decode(checkUserOp($db));
@@ -712,6 +749,7 @@ function addUserOp() {
 //                    echo "kosong";
                     $check_jab = 0;
                     $paramNamaInstitusi = $checkUserJab[$i]->Nama_institusi;
+                    $paramNamaInstitusi2 = strtolower($paramNamaInstitusi);
 //                    $paramIdInstitusi = $checkUserJab[$i]->id_institusi_Institusi;
                 } else {
                     $check_jab = 1;
@@ -722,18 +760,19 @@ function addUserOp() {
                 $add_jab = $db->prepare($sql);
                 $add_jab->bindValue(":id_jabatan", $tiga);
                 $add_jab->bindValue(":id_institusi", $paramInstitusi);
-                $add_jab->bindValue(":jabatan", 'Operator ' . $paramNamaInstitusi);
+                $add_jab->bindValue(":jabatan", 'operator_' . $paramNamaInstitusi2);
                 if ($add_jab->execute()) {
-                    $namaNew = 'Operator_' . $paramNamaInstitusi;
+                    $namaNew = 'operator_' . $paramNamaInstitusi;
+                    $namaNew2 = strtolower($namaNew);
                     $idJabNew = "UPDATE users SET id_jabatan=:id_jabs_new WHERE account = '" . $paramAccount . "'";
                     $add_jab_new = $db->prepare($idJabNew);
                     $add_jab_new->bindValue(":id_jabs_new", $tiga);
                     if ($add_jab_new->execute()) {
                         $NamaNew = "UPDATE users SET account=:accountNew WHERE account = '" . $paramAccount . "'";
                         $NamaNew2 = $db->prepare($NamaNew);
-                        $NamaNew2->bindValue(":accountNew", $namaNew);
+                        $NamaNew2->bindValue(":accountNew", $namaNew2);
                         $NamaNew2->execute();
-                        echo '{"result": "Sukses Buat Account Operator"}';
+                        echo '{"result": "Sukses Buat Account Operator", "data": {"account": "' . $namaNew2 . '", "password": "' . $paramPassword . '", "nama_institusi": "' . $paramNamaInstitusi . '"}}';
                     } else {
                         echo '{"result": "Gagal Buat Account Operator"}';
                     }
@@ -785,20 +824,35 @@ function addInstansi() {
     $req = json_decode($app->request()->getBody(), true);
 
     $instansi = json_decode(checkIdInstansi());
+    $checkNama = json_decode(checkNamaInstansi());
     $paramIdInstansi = $instansi->id_instansi;
-    $paramIdInstansiNew = tambah0($paramIdInstansi, 1);
 
     $paramInstansi = $req['nama_instansi'];
+    $paramIdInstansiNew = tambah0($paramIdInstansi, 1);
 
-    $query = "INSERT INTO instansi (id_instansi, nama_instansi) VALUES (:id_instansi, :nama_instansi)";
-    $stmt = $db->prepare($query);
-    $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
-    $stmt->bindValue(":nama_instansi", $paramInstansi);
-    $stmt->execute();
-    if ($stmt) {
-        echo '{"result": "Success"}';
+    for ($i = 0; $i < count($checkNama); $i++) { //pengecekan institusi yang belum ada operatornya
+//        echo $checkUserOp[$i]->account;
+        if ($paramInstansi != $checkNama[$i]->nama_instansi) {
+            $check = 0;
+        } else {
+            $check = 1;
+            break;
+        }
+    }
+
+//    echo $paramIdInstansiNew;
+//    echo '-'. $check;
+//    die();
+    if ($check == 0) {
+        $query = "INSERT INTO instansi (id_instansi, nama_instansi) VALUES (:id_instansi, :nama_instansi)";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
+        $stmt->bindValue(":nama_instansi", $paramInstansi);
+        if ($stmt->execute()) {
+            echo '{"result": "Success"}';
+        }
     } else {
-        echo '{"result": "there is something wrong}';
+        echo '{"result": "Nama Instansi Sudah Ada"}';
     }
 }
 
@@ -817,40 +871,71 @@ function checkIdInstansi() {
     return json_encode($output);
 }
 
+function checkNamaInstansi() {
+    $db = getDB();
+    $query = "SELECT * FROM instansi WHERE id_instansi !='000'";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_instansi" => $row['id_instansi'], "nama_instansi" => $row['nama_instansi']);
+        $i++;
+    }
+    $db = null;
+    return json_encode($output);
+}
+
 function addInstitusi() {
     $db = getDB();
     global $app;
     $req = json_decode($app->request()->getBody(), true);
+
+    $checkNamaInstitusi = json_decode(checkInstitusi());
+//    $checkNama = $checkNamaInstitusi->nama_institusi;
 
     $paramNamaInstitusi = $req['nama_institusi'];
     $paramIdInstansi = $req['id_instansi'];
 
     $paramIdInstansiNew = tambah0($paramIdInstansi, 0);
 
-    $sql = "SELECT id_institusi from institusi WHERE id_instansi =:id_instansi";
-    $stmt2 = $db->prepare($sql);
-    $stmt2->bindValue(":id_instansi", $paramIdInstansiNew);
-    $stmt2->execute();
-    $rowCount = $stmt2->rowCount();
-    $i = 0;
-    while ($row = $stmt2->fetch()) {
-        $paramIdInstitusi[$i] = $row['id_institusi'];
-        $i++;
+    for ($i = 0; $i < count($checkNamaInstitusi); $i++) { //pengecekan institusi yang belum ada operatornya
+//        echo $checkUserOp[$i]->account;
+        if ($paramNamaInstitusi != $checkNamaInstitusi[$i]->nama_institusi) {
+            $check = 0;
+        } else {
+            $check = 1;
+            break;
+        }
     }
+//    
+//    echo $check;
+//    die();
+    if ($check == 0) {
+        $sql = "SELECT id_institusi from institusi WHERE id_instansi =:id_instansi";
+        $stmt2 = $db->prepare($sql);
+        $stmt2->bindValue(":id_instansi", $paramIdInstansiNew);
+        $stmt2->execute();
+        $rowCount = $stmt2->rowCount();
+        $i = 0;
+        while ($row = $stmt2->fetch()) {
+            $paramIdInstitusi[$i] = $row['id_institusi'];
+            $i++;
+        }
 
-    $paramIdInsititusiNew = tambah0($paramIdInstansiNew, 0) . tambah0(intval(substr($paramIdInstitusi[$rowCount - 1], -3)) + 1, 0);
+        $paramIdInsititusiNew = tambah0($paramIdInstansiNew, 0) . tambah0(intval(substr($paramIdInstitusi[$rowCount - 1], -3)) + 1, 0);
 //    echo $paramIdInsititusiNew;
 //    die();
-    $query = "INSERT INTO institusi (id_instansi, nama_institusi, id_institusi) VALUES (:id_instansi, :nama_institusi, :id_institusi)";
-    $stmt = $db->prepare($query);
-    $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
-    $stmt->bindValue(":nama_institusi", $paramNamaInstitusi);
-    $stmt->bindValue(":id_institusi", $paramIdInsititusiNew);
-    $stmt->execute();
-    if ($stmt) {
-        echo '{"result": "Success"}';
+        $query = "INSERT INTO institusi (id_instansi, nama_institusi, id_institusi) VALUES (:id_instansi, :nama_institusi, :id_institusi)";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
+        $stmt->bindValue(":nama_institusi", $paramNamaInstitusi);
+        $stmt->bindValue(":id_institusi", $paramIdInsititusiNew);
+        $stmt->execute();
+        if ($stmt) {
+            echo '{"result": "Berhasil Tambah Institusi"}';
+        }
     } else {
-        echo '{"result": "there is something wrong}';
+        echo '{"result": "Nama Institusi Sudah Ada"}';
     }
 }
 
