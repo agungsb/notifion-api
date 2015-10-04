@@ -105,6 +105,15 @@ $app->put('/setRead', 'setRead');
 $app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
 
+// Panduan header interceptor
+$app->get('/testHeader', function() {
+    $token = headersInterceptor();
+
+    $decode = JWT::decode($token, TK);
+
+    print_r($decode);
+});
+
 /**
  * Step 4: Run the Slim application
  *
@@ -112,6 +121,16 @@ $app->delete('/hapusUser/:token/:account', 'hapusUser');
  * and returns the HTTP response to the HTTP client.
  */
 $app->run();
+
+function headersInterceptor() {
+    global $app;
+
+    $headers = $app->request->headers;
+    if (!isset($headers['N-Auth'])) {
+        die('{"result" : "Access forbidden"}');
+    }
+    return $headers['N-Auth'];
+}
 
 function hapusUser($token, $account) {
     $db = getDB();
@@ -146,9 +165,9 @@ function editUser($token) {
     $jenis_user = $decode->jenis_user;
 
     $paramPassword = $req['password']; // Getting parameter with names
-    
+
     echo $paramPassword;
-    
+
     die();
 
 
