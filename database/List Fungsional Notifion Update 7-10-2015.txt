@@ -1,0 +1,72 @@
+Fungsional Notifion UPDATE 27-9-2015
+
+1. Login beserta pengaturannya (done)
+2. Account Super Admin
+	a. Create OP
+		a.1. Add (done)
+		a.2. Pengecekan sebelum ditambah (done)
+		a.3. Edit (not yet)
+		a.4. Hapus (done) 
+	b. Tambah Instansi
+		b.1 Add include otomatisasi id ketika di tambah (done)
+		b.2. Pengecekan sebelum ditambah (done)
+		b.3. Edit (not yet)
+		b.4. Hapus (done)
+	c. Tambah Institusi
+		c.1. Add include otomatisasi id ketika di tambah (done)
+		c.2. Pengecekan sebelum ditambah (done)
+		c.3. Edit (not yet)
+		c.4. Hapus (done) 
+	d. Tambah Surat Kode Hal
+		d.1. Add (done)
+		d.2. Pengecekan sebelum ditambah (done)
+		d.3. Edit (not yet)
+		d.4. Hapus (done) 
+	e. Tambah Surat Kode Unit
+		e.1. Add (done)
+		e.2. Pengecekan sebelum ditambah (done)
+		e.3. Edit (not yet)
+		e.4. Hapus (done)
+
+3. Account OP Lembaga
+      3.1 Add User
+	3.1.1 Add User di Lembaganya (pejabat, dosen) (not yet)
+	3.1.2 Edit User, Hapus User (not yet)
+	
+      3.2 Buat Surat (untuk OP Lembaga)
+	3.2.1 Modul Pengisian
+		3.2.1.1. Otomatisasi Nomor Surat (done)
+		3.2.1.2 list Kode Hal (done)
+		3.2.1.3 Pengaturan Tujuan, Penandatangan, tembusan=>(optional)(done)
+	3.2.2 Insert Attachment dan terhubung Database termasuk link Attachment untuk di Suratnya (done)
+	3.2.3 Preview Surat (done)
+	3.2.3 Modul Pengiriman
+		3.2.3.1 Submit Surat (tulis / upload) (save database) (done)
+		3.2.3.2 Pengiriman Via Email (not yet)
+	3.2.4 Edit Biodata (done) => penamabahan photo thumbnail (not yet)
+	3.2.5 Upload Surat (done)
+	3.2.6 Terima Surat Masuk Ke Lembaga (not yet)
+	3.2.7 List Surat Keluar (not Yet)
+
+4. Account Pejabat Lembaga
+	4.1 Edit Biodata (done)
+	4.2 ACC REJECT Surat yang akan di kirim include Preview Surat (done)
+	4.3 Edited Rejected Surat (not yet)
+	4.4 Menerima, View surat masuk dan Memfavoritkan Surat (done)
+
+5. Account Pejabat
+	5.1 Menerima, View surat masuk dan Memfavoritkan Surat (done)
+
+fitur tambahan.
+-Semua List dibuat Data Table (not yet).
+-pengecekan string untuk di setiap penambahan (huruf besar dan kecil)
+-tambah rule jenis_user == 2 untuk setiap action penambahan
+-listing favourite
+
+hasil presentasi :
+note :
+=tanggal di default (pengaruh untuk penomoran)
+
+==dokumentasi
+==powerpoint
+==buat bab 1 bab 2 bab 3

@@ -104,6 +104,10 @@ $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
 $app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
+$app->delete('/hapusInstansi/:token/:instansi', 'hapusInstansi');
+$app->delete('/hapusInstitusi/:token/:institusi', 'hapusInstitusi');
+$app->delete('/hapusKodeHal/:token/:kode_hal', 'hapusKodeHal');
+$app->delete('/hapusKodeUnit/:token/:kode_unit', 'hapusKodeUnit');
 
 // Panduan header interceptor
 $app->get('/testHeader', function() {
@@ -150,6 +154,102 @@ function hapusUser($token, $account) {
             $stmt2->bindValue(":account", $account);
             $stmt2->execute();
             echo '{"result": "Sukses Hapus Account Operator"}';
+        }
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusInstansi($token, $instansi) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from instansi WHERE id_instansi=:id_instansi";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":id_instansi", $instansi);
+        if ($stmt->execute()) {
+            $sql = "DELETE from institusi WHERE id_instansi=:id_instansi";
+            $stmt2 = $db->prepare($sql);
+            $stmt2->bindValue(":id_instansi", $instansi);
+            $stmt2->execute();
+            echo '{"result": "Sukses Hapus Instansi"}';
+        }
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusInstitusi($token, $institusi) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from institusi WHERE id_institusi=:id_institusi";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":id_institusi", $institusi);
+        if ($stmt->execute()) {
+//            $sql = "DELETE from institusi WHERE id_instansi=:id_instansi";
+//            $stmt2 = $db->prepare($sql);
+//            $stmt2->bindValue(":id_instansi", $instansi);
+//            $stmt2->execute();
+            echo '{"result": "Sukses Hapus institusi"}';
+        }
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusKodeHal($token, $kode_hal) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from surat_kode_hal WHERE kode_hal=:kode_hal";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":kode_hal", $kode_hal);
+        if ($stmt->execute()) {
+//            $sql = "DELETE from institusi WHERE id_instansi=:id_instansi";
+//            $stmt2 = $db->prepare($sql);
+//            $stmt2->bindValue(":id_instansi", $instansi);
+//            $stmt2->execute();
+            echo '{"result": "Sukses Hapus Kode Hal"}';
+        }
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusKodeUnit($token, $kodeUnit) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from surat_kode_unit WHERE kode_unit=:kode_unit";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":kode_unit", $kodeUnit);
+        if ($stmt->execute()) {
+//            $sql = "DELETE from institusi WHERE id_instansi=:id_instansi";
+//            $stmt2 = $db->prepare($sql);
+//            $stmt2->bindValue(":id_instansi", $instansi);
+//            $stmt2->execute();
+            echo '{"result": "Sukses Hapus Kode Hal"}';
         }
     } else {
         echo '{"result": "Bukan Hak Nya"}';
@@ -318,7 +418,7 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']));
+            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "lampiran" => getLampiranFilePath($row['no_surat']));
             $i++;
         }
     } else {
@@ -326,6 +426,30 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     }
     $db = null;
     echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
+}
+
+function getLampiranFilePath($no_surat) {
+
+    $lampirans = array();
+
+    $db = getDB();
+
+    $query = "SELECT surat_lampiran.file_path FROM `surat`, `surat_lampiran` WHERE surat.no_surat = :no_surat AND surat.no_surat = surat_lampiran.no_surat";
+
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":no_surat", $no_surat);
+    $stmt->execute();
+    if ($stmt->rowCount() > 0) {
+        $i = 0;
+        while ($row = $stmt->fetch()) {
+            $lampirans[$i] = array("file_path" => $row['file_path']);
+            $i++;
+        }
+    } else {
+        $lampirans = [];
+    }
+    $db = null;
+    return $lampirans;
 }
 
 function getAllSuratsDraft($token, $offset, $limit) {

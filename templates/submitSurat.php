@@ -15,6 +15,7 @@ function submitSurat() {
         $paramIdInstitusi = $decode->id_institusi;
         $paramNamaInstitusi = $decode->nama_institusi;
         $paramHal = $req['hal'];
+
         $paramLampiran = $req['lampiran'];
 
         $paramTujuan = json_decode($req['tujuan']);
@@ -73,20 +74,22 @@ function submitSurat() {
                 if ($paramUploaded == 'true') {
                     $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
                     if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
-                        if (InsertSuratUploaded($db, $nosurat, $file_path)) {
-                            if (!InsertSuratAttachment($db, $nosurat, $file_path)) {
-                                die('{"result": "Gagal mengupload lampiran"}');
-                            };
-                        } else {
+                        if (!InsertSuratUploaded($db, $nosurat, $file_path)) {
                             die('{"result": "Gagal mengupload surat"}');
                         }
-                    };
+                    }
                 }
 
                 // Setelah berhasil mengeksekusi query, upload file ke folder yang telah ditentukan
-                for ($i = 0; $i < $paramLampiran; $i++) {
-                    $destination = 'assets/attachments/' . $_FILES[$i]['name'];
-                    move_uploaded_file($_FILES[$i]['tmp_name'], $destination);
+                if ($paramLampiran > 0) {
+                    for ($i = 0; $i < $paramLampiran; $i++) {
+                        $destination = 'assets/attachments/' . $_FILES[$i]['name'];
+                        if (move_uploaded_file($_FILES[$i]['tmp_name'], $destination)) {
+                            if (!InsertSuratAttachment($db, $nosurat, $destination)) {
+                                die('{"result": "Gagal mengupload lampiran"}');
+                            }
+                        }
+                    }
                 }
 
                 $registration_ids = array();
