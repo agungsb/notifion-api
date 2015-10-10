@@ -44,7 +44,7 @@ function submitSurat() {
 
         $nosurat = checkCounter($db, $paramIdInstitusi, false) . "/UN39." . getKodeUnit($db, $paramIdInstitusi) . "/" . $paramHal . "/" . date('y');
 
-        $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat, is_uploaded) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat, :is_uploaded)";
+        $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat, ditandatangani, is_uploaded) VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat, :ditandatangani, :is_uploaded)";
 
         $stmt = $db->prepare($query);
         $stmt->bindValue(":subject_surat", $paramSubject);
@@ -54,7 +54,7 @@ function submitSurat() {
         $stmt->bindValue(":nosurat", $nosurat);
         $stmt->bindValue(":lampiran", (int) $paramLampiran, PDO::PARAM_INT);
         $stmt->bindValue(":hal", $paramHal);
-        $stmt->bindValue(":isi", $paramIsi);
+        $stmt->bindValue(":ditandatangani", '0');
         $stmt->bindValue(":is_uploaded", $paramUploaded);
         $paramTembusan = json_decode($req['tembusan']);
         if ($paramTembusan != null) {

@@ -99,7 +99,7 @@ $app->post('/addKodeHal', 'addKodeHal');
 $app->post('/addKodeUnit', 'addKodeUnit');
 $app->post('/attachments', 'saveAttachments'); // testing only
 $app->put('/accSurat', 'accSurat');
-$app->put('/rejectSurat', 'rejectSurat');
+$app->put('/koreksiSurat', 'koreksiSurat');
 $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
 $app->put('/editUser/:token', 'editUser');
@@ -458,7 +458,7 @@ function getAllSuratsDraft($token, $offset, $limit) {
     $account = $decode->account;
     $id_jabatan = $decode->id_jabatan;
 
-    $query = "SELECT surat.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan=:account or surat.penandatangan=:idJabatan) AND surat.ditandatangani='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
+    $query = "SELECT surat.*, surat_koreksi.koreksi, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `surat_koreksi`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan=:account or surat.penandatangan=:idJabatan) AND surat.ditandatangani='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal AND surat.no_surat = surat_koreksi.no_surat ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
 
     $stmt = $db->prepare($query);
     $stmt->bindValue(":account", $account);
@@ -470,7 +470,7 @@ function getAllSuratsDraft($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']));
+            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi']);
             $i++;
         }
     } else {
@@ -1299,19 +1299,20 @@ function addCounter($db, $id_institusi, $counter, $year) {
     $stmt->execute();
 }
 
-function rejectSurat() {
+function koreksiSurat() {
     $db = getDB();
     global $app;
     $req = json_decode($app->request()->getBody(), true);
 
     $id_surat = $req['id_surat'];
     $token = $req['token'];
+    $pesan = $req['pesan'];
 
     $decode = JWT::decode($token, TK);
     $account = $decode->account;
     $id_jabatan = $decode->id_jabatan;
 
-    $query = "SELECT surat.* FROM surat WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
+    $query = "SELECT surat.no_surat FROM surat WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_surat", $id_surat);
     $stmt->bindValue(":account", $account);
@@ -1319,8 +1320,9 @@ function rejectSurat() {
     try {
         $stmt->execute();
         if ($stmt->rowCount() == 1) {
+            $row = $stmt->fetch();
 //            echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
-            sendToDraft($db, $token, $id_surat, $account, $id_jabatan);
+            sendToDraft($db, $token, $id_surat, $row['no_surat'], $account, $id_jabatan, $pesan);
         } else {
             echo '{"error": "Action not granted"}';
         }
@@ -1330,17 +1332,26 @@ function rejectSurat() {
     }
 }
 
-function sendToDraft($db, $token, $id_surat, $account, $id_jabatan) {
+function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $pesan) {
     $query = "UPDATE `surat` SET surat.ditandatangani='2' WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_surat", $id_surat);
     $stmt->bindValue(":account", $account);
     $stmt->bindValue(":id_jabatan", $id_jabatan);
     try {
-        $stmt->execute();
+        if ($stmt->execute()) {
+            $sql = "insert into surat_koreksi (id_koreksi, no_surat, koreksi) values (:id_koreksi, :no_surat, :koreksi)";
+            $stmt2 = $db->prepare($sql);
+            $stmt2->bindValue(":id_koreksi", $id_surat);
+            $stmt2->bindValue(":no_surat", $no_surat);
+            $stmt2->bindValue(":koreksi", $pesan);
+            if($stmt2->execute()){
+                echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $id_surat . '}';
+            }
+        }
         $db = null;
 //        echo '{"result": "' . $id_surat . '"}';
-        echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $id_surat . '}';
+//        echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $id_surat . '}';
     } catch (PDOException $ex) {
         echo '{"error": "' . $ex->getMessage() . '"}';
     }
