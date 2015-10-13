@@ -28,6 +28,7 @@ require 'templates/preview.php';
 require 'templates/preview2.php';
 require 'templates/view.php';
 require 'templates/attachments.php';
+require 'templates/sse.php';
 
 include_once 'GCM.php';
 
@@ -84,6 +85,7 @@ $app->get('/instansi', 'getInstansi');
 $app->get('/checkIdInstansi', 'checkIdInstansi'); // testing only
 $app->get('/checkUserJabatan', 'checkUserJabatan'); // testing only
 $app->get('/institusi', 'getInstitusi');
+$app->get('/sse/:id', 'getSse');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
 $app->get('/view/:id/:token', 'viewSurat');
