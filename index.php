@@ -19,6 +19,8 @@
  * your Slim application now by passing an associative array
  * of setting names and values into the application constructor.
  */
+
+// COMEND GG
 require 'config.php';
 require 'db.php';
 require 'JWT.php';
