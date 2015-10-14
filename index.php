@@ -30,6 +30,7 @@ require 'templates/preview.php';
 require 'templates/preview2.php';
 require 'templates/view.php';
 require 'templates/attachments.php';
+require 'templates/sse.php';
 
 include_once 'GCM.php';
 
@@ -86,6 +87,7 @@ $app->get('/instansi', 'getInstansi');
 $app->get('/checkIdInstansi', 'checkIdInstansi'); // testing only
 $app->get('/checkUserJabatan', 'checkUserJabatan'); // testing only
 $app->get('/institusi', 'getInstitusi');
+$app->get('/sse/:id', 'getSse');
 $app->post('/preview', 'previewSurat');
 $app->post('/preview2', 'preview2');
 $app->get('/view/:id/:token', 'viewSurat');
@@ -113,11 +115,9 @@ $app->delete('/hapusKodeUnit/:token/:kode_unit', 'hapusKodeUnit');
 
 // Panduan header interceptor
 $app->get('/testHeader', function() {
-    $token = headersInterceptor();
+    headersInterceptor();
 
-    $decode = JWT::decode($token, TK);
-
-    print_r($decode);
+    echo "If you reach this, it means that the token is valid. GGWP!";
 });
 
 /**
@@ -133,9 +133,13 @@ function headersInterceptor() {
 
     $headers = $app->request->headers;
     if (!isset($headers['N-Auth'])) {
-        die('{"result" : "Access forbidden"}');
+        die('{"result" : "Akses ditolak"}');
+    } else {
+        $decode = JWT::decode($headers['N-Auth'], TK);
+        if ($decode->valid == 0) {
+            die('{"result" : "Token tidak valid"}');
+        }
     }
-    return $headers['N-Auth'];
 }
 
 function hapusUser($token, $account) {
@@ -1326,11 +1330,11 @@ function koreksiSurat() {
 //            echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
             sendToDraft($db, $token, $id_surat, $row['no_surat'], $account, $id_jabatan, $pesan);
         } else {
-            echo '{"error": "Action not granted"}';
+            echo '{"result": "Error", "message": "Action not granted"}';
         }
         $db = null;
     } catch (PDOException $ex) {
-        echo '{"error": "' . $ex->getMessage() . '"}';
+        echo '{"result": "Error", "message": "' . $ex->getMessage() . '"}';
     }
 }
 
@@ -1340,6 +1344,8 @@ function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $
     $stmt->bindValue(":id_surat", $id_surat);
     $stmt->bindValue(":account", $account);
     $stmt->bindValue(":id_jabatan", $id_jabatan);
+    global $app;
+    $headers = $app->request->headers;
     try {
         if ($stmt->execute()) {
             $sql = "insert into surat_koreksi (id_koreksi, no_surat, koreksi) values (:id_koreksi, :no_surat, :koreksi)";
@@ -1347,15 +1353,15 @@ function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $
             $stmt2->bindValue(":id_koreksi", $id_surat);
             $stmt2->bindValue(":no_surat", $no_surat);
             $stmt2->bindValue(":koreksi", $pesan);
-            if($stmt2->execute()){
-                echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $id_surat . '}';
+            if ($stmt2->execute()) {
+                echo '{"result": "Sukses", "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . '}';
             }
         }
         $db = null;
 //        echo '{"result": "' . $id_surat . '"}';
 //        echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $id_surat . '}';
     } catch (PDOException $ex) {
-        echo '{"error": "' . $ex->getMessage() . '"}';
+        echo '{"result": "Error", "message": "' . $ex->getMessage() . '"}';
     }
 }
 
