@@ -20,29 +20,39 @@ class JWT {
     public static function decode($jwt, $key = null, $verify = true) {
         $tks = explode('.', $jwt);
         if (count($tks) != 3) {
-            die();
-            throw new UnexpectedValueException('Wrong number of segments');
+            // die();
+//            throw new UnexpectedValueException('Wrong number of segments');
+            $output = array("valid" => 0, "error" => "Wrong number of segments");
+            return (object) $output;
         }
         list($headb64, $payloadb64, $cryptob64) = $tks;
         if (null === ($header = JWT::jsonDecode(JWT::urlsafeB64Decode($headb64)))
         ) {
-            die();
-            throw new UnexpectedValueException('Invalid segment encoding');
+            // die();
+//            throw new UnexpectedValueException('Invalid segment encoding');
+            $output = array("valid" => 0, "error" => "Invalid segment encoding");
+            return (object) $output;
         }
         if (null === $payload = JWT::jsonDecode(JWT::urlsafeB64Decode($payloadb64))
         ) {
-            die();
-            throw new UnexpectedValueException('Invalid segment encoding');
+            // die();
+//            throw new UnexpectedValueException('Invalid segment encoding');
+            $output = array("valid" => 0, "error" => "Invalid segment encoding");
+            return (object) $output;
         }
         $sig = JWT::urlsafeB64Decode($cryptob64);
         if ($verify) {
             if (empty($header->alg)) {
-                die();
-                throw new DomainException('Empty algorithm');
+                // die();
+//                throw new DomainException('Empty algorithm');
+                $output = array("valid" => 0, "error" => "Empty algorithm");
+                return (object) $output;
             }
             if ($sig != JWT::sign("$headb64.$payloadb64", $key, $header->alg)) {
-                die();
-                throw new UnexpectedValueException('Signature verification failed');
+                // die();
+//                throw new UnexpectedValueException('Signature verification failed');
+                $output = array("valid" => 0, "error" => "Signature verification failed");
+                return (object) $output;
             }
         }
         return $payload;
@@ -83,8 +93,10 @@ class JWT {
             'HS512' => 'sha512',
         );
         if (empty($methods[$method])) {
-            die();
-            throw new DomainException('Algorithm not supported');
+            // die();
+//            throw new DomainException('Algorithm not supported');
+            $output = array("valid" => 0, "error" => "Algorithm not supported");
+            return (object) $output;
         }
         return hash_hmac($methods[$method], $msg, $key, true);
     }
@@ -99,8 +111,10 @@ class JWT {
         if (function_exists('json_last_error') && $errno = json_last_error()) {
             JWT::handleJsonError($errno);
         } else if ($obj === null && $input !== 'null') {
-            die();
-            throw new DomainException('Null result with non-null input');
+            // die();
+//            throw new DomainException('Null result with non-null input');
+            $output = array("valid" => 0, "error" => "Null result with non-null input");
+            return (object) $output;
         }
         return $obj;
     }
@@ -115,8 +129,10 @@ class JWT {
         if (function_exists('json_last_error') && $errno = json_last_error()) {
             JWT::handleJsonError($errno);
         } else if ($json === 'null' && $input !== null) {
-            die();
-            throw new DomainException('Null result with non-null input');
+            // die();
+//            throw new DomainException('Null result with non-null input');
+            $output = array("valid" => 0, "error" => "Null result with non-null input");
+            return (object) $output;
         }
         return $json;
     }
@@ -155,9 +171,10 @@ class JWT {
             JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
             JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON'
         );
-        die();
-        throw new DomainException(isset($messages[$errno]) ? $messages[$errno] : 'Unknown JSON error: ' . $errno
-        );
+        // die();
+//        throw new DomainException(isset($messages[$errno]) ? $messages[$errno] : 'Unknown JSON error: ' . $errno);
+        $output = array("valid" => 0, "error" => isset($messages[$errno]) ? $messages[$errno] : 'Unknown JSON error: ' . $errno);
+        return (object) $output;
     }
 
 }
