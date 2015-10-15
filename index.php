@@ -868,7 +868,7 @@ function editBio() {
     $db = getDB();
     global $app;
     $req = json_decode($app->request()->getBody(), true);
-
+    
     $token = $req['token'];
     $paramNama = $req['nama'];
     $paramGender = $req['gender'];
@@ -879,12 +879,24 @@ function editBio() {
     $paramNohp1 = $req['nohp1'];
     $paramNohp2 = $req['nohp2'];
     
+    if (isset($req['email2'])) {
+        $paramEmail2 = $req['email2'];
+    } else {
+        $paramEmail2 = "";
+    }
+    if (isset($req['nohp1'])) {
+        $paramNohp1 = $req['nohp1'];
+    } else {
+        $paramNohp1 = "";
+    }
+    if (isset($req['nohp2'])) {
+        $paramNohp2 = $req['nohp2'];
+    } else {
+        $paramNohp2 = "";
+    }
 
     $decode = JWT::decode($token, TK);
     $akun = $decode->account;
-    
-    echo $akun;
-    die();
 
     $query = "UPDATE `users` SET nama=:nama, password=:password, gender=:jeniskelamin, nip=:nip, email1=:email1, email2=:email2, nohp1=:nohp1, nohp2=:nohp2 WHERE account=:account";
     $stmt = $db->prepare($query);
@@ -899,7 +911,7 @@ function editBio() {
     $stmt->bindValue(":account", $akun);
 
     $stmt->execute();
-    $db = null;
+//    $db = null;
     if ($stmt) {
         echo '{"result": "Success"}';
     } else {
