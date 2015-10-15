@@ -878,10 +878,13 @@ function editBio() {
     $paramEmail2 = $req['email2'];
     $paramNohp1 = $req['nohp1'];
     $paramNohp2 = $req['nohp2'];
-
+    
 
     $decode = JWT::decode($token, TK);
     $akun = $decode->account;
+    
+    echo $akun;
+    die();
 
     $query = "UPDATE `users` SET nama=:nama, password=:password, gender=:jeniskelamin, nip=:nip, email1=:email1, email2=:email2, nohp1=:nohp1, nohp2=:nohp2 WHERE account=:account";
     $stmt = $db->prepare($query);
