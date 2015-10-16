@@ -30,6 +30,8 @@ function submitSurat() {
             $penandatangan = $paramPenandatangan[0]->identifier;
         }
 
+        echo '{"account": "' . $penandatangan . '", "isUnreads": ' . countUnreads($paramToken) . ', "isFavorites": ' . countFavorites($paramToken) . ', "isUnsigned": ' . countUnsigned('', '', $penandatangan) . '}';
+        die();
         if (isset($req['isi'])) {
             $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
         } else {

@@ -613,11 +613,13 @@ function countUnreads($token) {
     return $stmt->rowCount();
 }
 
-function countUnsigned($token) {
+function countUnsigned($token = '', $account = '', $id_jabatan = '') {
     $db = getDB();
-    $decode = JWT::decode($token, TK);
-    $account = $decode->account;
-    $id_jabatan = $decode->id_jabatan;
+    if ($token != '') {
+        $decode = JWT::decode($token, TK);
+        $account = $decode->account;
+        $id_jabatan = $decode->id_jabatan;
+    }
 
     $query = "SELECT surat.* FROM `surat` WHERE (surat.penandatangan=:account or surat.penandatangan=:idJabatan) AND surat.ditandatangani = '0'";
 
@@ -866,7 +868,7 @@ function editBio() {
     $db = getDB();
     global $app;
     $req = json_decode($app->request()->getBody(), true);
-    
+
     $token = $req['token'];
     $paramNama = $req['nama'];
     $paramGender = $req['gender'];
