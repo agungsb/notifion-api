@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.0.9
+-- version 4.2.11
 -- http://www.phpmyadmin.net
 --
--- Inang: 127.0.0.1
--- Waktu pembuatan: 17 Okt 2015 pada 17.35
--- Versi Server: 5.5.34
--- Versi PHP: 5.4.22
+-- Host: 127.0.0.1
+-- Generation Time: Oct 17, 2015 at 03:16 PM
+-- Server version: 5.6.21
+-- PHP Version: 5.6.3
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -17,13 +17,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- Basis data: `sirat_v2`
+-- Database: `sirat_v2`
 --
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `email`
+-- Table structure for table `email`
 --
 
 CREATE TABLE IF NOT EXISTS `email` (
@@ -32,30 +32,25 @@ CREATE TABLE IF NOT EXISTS `email` (
   `attacment` text NOT NULL,
   `isi` varchar(255) NOT NULL,
   `id_surat` int(4) NOT NULL,
-  `penerima` int(4) NOT NULL,
-  PRIMARY KEY (`no`),
-  KEY `penerima` (`penerima`),
-  KEY `id_surat` (`id_surat`)
+  `penerima` int(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `gcm_users`
+-- Table structure for table `gcm_users`
 --
 
 CREATE TABLE IF NOT EXISTS `gcm_users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+`id` int(11) NOT NULL,
   `gcm_regid` text NOT NULL,
   `account` varchar(255) NOT NULL,
   `id_institusi` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `id_institusi` (`id_institusi`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=72 ;
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `gcm_users`
+-- Dumping data for table `gcm_users`
 --
 
 INSERT INTO `gcm_users` (`id`, `gcm_regid`, `account`, `id_institusi`, `created_at`) VALUES
@@ -64,17 +59,16 @@ INSERT INTO `gcm_users` (`id`, `gcm_regid`, `account`, `id_institusi`, `created_
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `instansi`
+-- Table structure for table `instansi`
 --
 
 CREATE TABLE IF NOT EXISTS `instansi` (
   `id_instansi` varchar(9) NOT NULL,
-  `nama_instansi` varchar(255) NOT NULL,
-  PRIMARY KEY (`id_instansi`)
+  `nama_instansi` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `instansi`
+-- Dumping data for table `instansi`
 --
 
 INSERT INTO `instansi` (`id_instansi`, `nama_instansi`) VALUES
@@ -89,18 +83,17 @@ INSERT INTO `instansi` (`id_instansi`, `nama_instansi`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `institusi`
+-- Table structure for table `institusi`
 --
 
 CREATE TABLE IF NOT EXISTS `institusi` (
   `id_institusi` varchar(6) NOT NULL,
   `nama_institusi` varchar(255) NOT NULL,
-  `id_instansi` varchar(6) NOT NULL,
-  PRIMARY KEY (`id_institusi`)
+  `id_instansi` varchar(6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `institusi`
+-- Dumping data for table `institusi`
 --
 
 INSERT INTO `institusi` (`id_institusi`, `nama_institusi`, `id_instansi`) VALUES
@@ -124,18 +117,17 @@ INSERT INTO `institusi` (`id_institusi`, `nama_institusi`, `id_instansi`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `jabatan`
+-- Table structure for table `jabatan`
 --
 
 CREATE TABLE IF NOT EXISTS `jabatan` (
   `id_jabatan` varchar(9) NOT NULL,
   `id_institusi` varchar(9) NOT NULL,
-  `jabatan` varchar(50) NOT NULL,
-  PRIMARY KEY (`id_jabatan`)
+  `jabatan` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `jabatan`
+-- Dumping data for table `jabatan`
 --
 
 INSERT INTO `jabatan` (`id_jabatan`, `id_institusi`, `jabatan`) VALUES
@@ -154,51 +146,47 @@ INSERT INTO `jabatan` (`id_jabatan`, `id_institusi`, `jabatan`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `log_kirim`
+-- Table structure for table `log_kirim`
 --
 
 CREATE TABLE IF NOT EXISTS `log_kirim` (
-  `no` int(4) NOT NULL AUTO_INCREMENT,
+`no` int(4) NOT NULL,
   `id_surat` varchar(10) NOT NULL,
   `jenis_penerima` varchar(255) NOT NULL COMMENT 'SMS, ANDRO, EMAIL',
   `tujuan` varchar(255) NOT NULL,
-  `waktu_kirim` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`no`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+  `waktu_kirim` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `log_respond`
+-- Table structure for table `log_respond`
 --
 
 CREATE TABLE IF NOT EXISTS `log_respond` (
-  `id` int(4) NOT NULL AUTO_INCREMENT,
+`id` int(4) NOT NULL,
   `pesan_respond` varchar(255) NOT NULL,
-  `waktu` date NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+  `waktu` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `operator`
+-- Table structure for table `operator`
 --
 
 CREATE TABLE IF NOT EXISTS `operator` (
-  `id_operator` int(4) NOT NULL AUTO_INCREMENT,
+`id_operator` int(4) NOT NULL,
   `account_op` varchar(255) NOT NULL,
   `pass_op` varchar(255) NOT NULL,
   `nama` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
   `id_institusi` int(4) NOT NULL,
-  `alamat_kantor` varchar(50) NOT NULL,
-  PRIMARY KEY (`id_operator`),
-  KEY `id_institusi` (`id_institusi`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
+  `alamat_kantor` varchar(50) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `operator`
+-- Dumping data for table `operator`
 --
 
 INSERT INTO `operator` (`id_operator`, `account_op`, `pass_op`, `nama`, `email`, `id_institusi`, `alamat_kantor`) VALUES
@@ -208,18 +196,17 @@ INSERT INTO `operator` (`id_operator`, `account_op`, `pass_op`, `nama`, `email`,
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `pejabat`
+-- Table structure for table `pejabat`
 --
 
 CREATE TABLE IF NOT EXISTS `pejabat` (
-  `id_pejabat` int(4) NOT NULL AUTO_INCREMENT,
+`id_pejabat` int(4) NOT NULL,
   `account` varchar(255) NOT NULL,
-  `id_jabatan` varchar(9) NOT NULL,
-  PRIMARY KEY (`id_pejabat`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=8 ;
+  `id_jabatan` varchar(9) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `pejabat`
+-- Dumping data for table `pejabat`
 --
 
 INSERT INTO `pejabat` (`id_pejabat`, `account`, `id_jabatan`) VALUES
@@ -232,11 +219,11 @@ INSERT INTO `pejabat` (`id_pejabat`, `account`, `id_jabatan`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat`
+-- Table structure for table `surat`
 --
 
 CREATE TABLE IF NOT EXISTS `surat` (
-  `id_surat` int(4) NOT NULL AUTO_INCREMENT,
+`id_surat` int(4) NOT NULL,
   `subject_surat` varchar(250) NOT NULL,
   `nama_surat` varchar(255) NOT NULL,
   `no_surat` varchar(30) NOT NULL,
@@ -258,20 +245,17 @@ CREATE TABLE IF NOT EXISTS `surat` (
   `pesan_sms` varchar(160) NOT NULL,
   `ditandatangani` tinyint(4) NOT NULL,
   `is_uploaded` varchar(5) NOT NULL,
-  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_surat`),
-  KEY `kode_unit` (`file_lampiran`),
-  KEY `pembuat` (`lampiran`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=127 ;
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat`
+-- Dumping data for table `surat`
 --
 
 INSERT INTO `surat` (`id_surat`, `subject_surat`, `nama_surat`, `no_surat`, `jenis`, `hal`, `isi`, `kode_hal`, `kode_lembaga_pengirim`, `penandatangan`, `tujuan`, `lampiran`, `tembusan`, `tanggal_surat`, `file_surat`, `file_lampiran`, `id_operator`, `pesan_android`, `pesan_email`, `pesan_sms`, `ditandatangani`, `is_uploaded`, `created`) VALUES
 (35, 'Test Subject', '', '35/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 14:57:15'),
 (36, 'Test Subject', '', '36/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 14:57:47'),
-(68, 'DAUS', '', '999/UN.39.18/TU/15', '', '', 'TES', 'KP', '003000', '003000001', 'hamidillah_ajie@+id/', 2, 'hamidillah_ajie', '2015-09-14', '', '', 0, '', '', '', 1, '', '2015-09-19 07:27:45'),
+(68, 'DAUS', '', '999/UN.39.18/TU/15', '', '', 'TES', 'KP', '003000', '003000001', 'hamidillah_ajie@+id/', 2, 'hamidillah_ajie', '2015-09-14', '', '', 0, '', '', '', 1, '', '2015-10-17 12:10:33'),
 (69, 'Test Subject', '', '999/UN.39.18/TU/15', '', '', 'asdf', 'KP', '003000', '003000000', 'hamidillah_ajie@+id/', 2, '002000000', '2015-09-16', '', '', 0, '', '', '', 0, '', '2015-09-16 17:00:14'),
 (70, 'Test Subject', '', '999/UN.39.18/TU/15', '', '', 'asdf', 'KP', '003000', '003000000', 'hamidillah_ajie@+id/', 2, '002000000', '2015-09-16', '', '', 0, '', '', '', 0, '', '2015-09-16 17:00:14'),
 (71, 'Test Subject', '', '999/UN.39.18/TU/15', '', '', 'asdf', 'KP', '003000', '003000000', 'hamidillah_ajie@+id/', 2, '002000000', '2015-09-16', '', '', 0, '', '', '', 0, '', '2015-09-16 17:00:16'),
@@ -291,19 +275,7 @@ INSERT INTO `surat` (`id_surat`, `subject_surat`, `nama_surat`, `no_surat`, `jen
 (92, 'Test Subject', '', '26/UN39.18/AK/15', '', '', '<p>asdfdf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 2, 'hamidillah_ajie', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:43:31'),
 (93, 'Test Subject', '', '27/UN39.18/AK/15', '', '', '<p>asdfdf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 3, 'hamidillah_ajie', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:44:28'),
 (94, 'Test Subject', '', '28/UN39.18/AK/15', '', '', '<p>asdfdf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 3, 'hamidillah_ajie', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:45:40'),
-(95, 'Test Subject', '', '29/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:46:16'),
-(96, 'Test Subject', '', '30/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 2, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:46:39'),
-(97, 'Test Subject', '', '31/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'hamidillah_ajie@+id/', 2, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:47:48'),
 (98, 'Test Subject', '', '32/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'hamidillah_ajie@+id/', 3, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:48:10'),
-(99, 'Test Subject', '', '33/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:51:56'),
-(100, 'Test Subject', '', '34/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 14:53:07'),
-(101, 'Test Subject', '', '37/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:04:31'),
-(102, 'Test Subject', '', '38/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:05:01'),
-(103, 'Test Subject', '', '39/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 1, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:05:45'),
-(104, 'Test Subject', '', '40/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 3, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:06:32'),
-(105, 'Test Subject', '', '41/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 2, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:07:57'),
-(106, 'Test Subject', '', '42/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 2, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:12:42'),
-(107, 'Test Subject', '', '43/UN39.18/AK/15', '', '', '', 'AK', '003000', '003000003', 'pak_joni@+id/', 2, 'pak_joni', '2015-10-04', '', '', 0, '', '', '', 0, 'true', '2015-10-04 15:13:39'),
 (108, 'Test Subject', '', '44/UN39.18/AK/15', '', '', '<p>asdfasd</p>', 'AK', '003000', '003000001', 'hamidillah_ajie@+id/', 1, 'wisnu_dj', '2015-10-07', '', '', 0, '', '', '', 2, 'false', '2015-10-10 14:37:24'),
 (109, 'TES SORE', '', '45/UN39.18/DK/15', '', '', '<p>Tes Surat Sore</p><p>aaaaaaaaa</p><p>aaaaaaaaaaaaaaaaaa</p><p>aaaaaaaaaaaaaaaaaaaaaaaaa</p>', 'DK', '003000', '18', '18@+id/', 0, '', '2015-10-08', '', '', 0, '', '', '', 1, 'false', '2015-10-07 10:42:38'),
 (110, 'TES SORE', '', '46/UN39.18/BS/15', '', '', '<p>Tes Surat Sore</p><p>aaaaaaaaa</p><p>aaaaaaaaaaaaaaaaaa</p><p>aaaaaaaaaaaaaaaaaaaaaaaaa</p>', 'BS', '003000', '18', 'hamidillah_ajie@+id/', 1, 'pak_joni', '2015-10-08', '', '', 0, '', '', '', 1, 'false', '2015-10-07 10:48:26'),
@@ -314,41 +286,35 @@ INSERT INTO `surat` (`id_surat`, `subject_surat`, `nama_surat`, `no_surat`, `jen
 (115, 'TES PAKE LAMPIRAN', '', '51/UN39.18/BS/15', '', '', '<p>kalo sekarang, ada lampiran</p>', 'BS', '003000', '18', 'hamidillah_ajie@+id/', 1, 'pak_joni', '2015-10-08', '', '', 0, '', '', '', 0, 'false', '2015-10-07 11:16:40'),
 (116, 'PERMOHONAN MAAF', '', '52/UN39.18/AK/15', '', '', '<p><b>Tes</b> Surat Mohon Maaf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 1, '', '2015-10-07', '', '', 0, '', '', '', 1, 'false', '2015-10-07 12:19:49'),
 (117, 'Test Subject', '', '53/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:27'),
-(118, 'Test Subject', '', '54/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:49'),
-(119, 'Test Subject', '', '55/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:49'),
-(120, 'Test Subject', '', '56/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:49'),
-(121, 'Test Subject', '', '57/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:50'),
-(122, 'Test Subject', '', '58/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:50'),
-(123, 'Test Subject', '', '59/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:50'),
-(124, 'Test Subject', '', '60/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:53'),
-(125, 'Test Subject', '', '61/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:53'),
-(126, 'Test Subject', '', '62/UN39.18/AK/15', '', '', '<p>tes 2</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:18:25');
+(126, 'Test Subject', '', '62/UN39.18/AK/15', '', '', '<p>tes 2</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:18:25'),
+(127, 'Test Subject', '', '63/UN39.18/AK/15', '', '', '<p>test antar websocket</p>', 'AK', '003000', '003000001', 'operator_pustikom@+id/', 0, '', '2015-10-17', '', '', 0, '', '', '', 0, 'false', '2015-10-17 12:20:19'),
+(129, 'Test Subject', '', '65/UN39.18/BS/15', '', '', '<p>ghuaafadsf</p>', 'BS', '003000', '003000001', '002000000@+id/', 0, '', '2015-10-17', '', '', 0, '', '', '', 0, 'false', '2015-10-17 12:54:32'),
+(130, 'Test Subject', '', '66/UN39.18/BS/15', '', '', '<p>ghuaafadsf</p>', 'BS', '003000', '003000001', '002000000@+id/', 0, '', '2015-10-17', '', '', 0, '', '', '', 2, 'false', '2015-10-17 13:14:39');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_counter`
+-- Table structure for table `surat_counter`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_counter` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+`id` int(11) NOT NULL,
   `id_institusi` varchar(6) NOT NULL,
   `counter` int(11) NOT NULL,
-  `year` varchar(6) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=4 ;
+  `year` varchar(6) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_counter`
+-- Dumping data for table `surat_counter`
 --
 
 INSERT INTO `surat_counter` (`id`, `id_institusi`, `counter`, `year`) VALUES
-(3, '003000', 62, '2015');
+(3, '003000', 66, '2015');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_isi`
+-- Table structure for table `surat_isi`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_isi` (
@@ -364,7 +330,7 @@ CREATE TABLE IF NOT EXISTS `surat_isi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_isi`
+-- Dumping data for table `surat_isi`
 --
 
 INSERT INTO `surat_isi` (`id_surat`, `no_surat`, `lampiran`, `hal`, `isi`, `nama_jabatan`, `nama_penjabat`, `nip`, `tembusan`) VALUES
@@ -374,18 +340,16 @@ INSERT INTO `surat_isi` (`id_surat`, `no_surat`, `lampiran`, `hal`, `isi`, `nama
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_kode_hal`
+-- Table structure for table `surat_kode_hal`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_kode_hal` (
   `kode_hal` varchar(10) NOT NULL,
-  `deskripsi` varchar(255) NOT NULL,
-  PRIMARY KEY (`kode_hal`),
-  KEY `kode_hal` (`kode_hal`)
+  `deskripsi` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_kode_hal`
+-- Dumping data for table `surat_kode_hal`
 --
 
 INSERT INTO `surat_kode_hal` (`kode_hal`, `deskripsi`) VALUES
@@ -438,19 +402,17 @@ INSERT INTO `surat_kode_hal` (`kode_hal`, `deskripsi`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_kode_unit`
+-- Table structure for table `surat_kode_unit`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_kode_unit` (
   `kode_unit` varchar(10) NOT NULL,
   `deskripsi` varchar(255) NOT NULL,
-  `id_institusi` varchar(6) NOT NULL,
-  PRIMARY KEY (`kode_unit`),
-  KEY `kode_unit` (`kode_unit`)
+  `id_institusi` varchar(6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_kode_unit`
+-- Dumping data for table `surat_kode_unit`
 --
 
 INSERT INTO `surat_kode_unit` (`kode_unit`, `deskripsi`, `id_institusi`) VALUES
@@ -521,38 +483,36 @@ INSERT INTO `surat_kode_unit` (`kode_unit`, `deskripsi`, `id_institusi`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_koreksi`
+-- Table structure for table `surat_koreksi`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_koreksi` (
   `id_koreksi` int(4) NOT NULL,
   `no_surat` varchar(30) NOT NULL,
-  `koreksi` varchar(255) NOT NULL,
-  PRIMARY KEY (`id_koreksi`)
+  `koreksi` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_koreksi`
+-- Dumping data for table `surat_koreksi`
 --
 
 INSERT INTO `surat_koreksi` (`id_koreksi`, `no_surat`, `koreksi`) VALUES
-(108, '44/UN39.18/AK/15', '<p>tes koreksi</p>');
+(108, '44/UN39.18/AK/15', '<p>tes koreksi</p>'),
+(130, '66/UN39.18/BS/15', '<p>rarieut euy<br/></p>');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_lampiran`
+-- Table structure for table `surat_lampiran`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_lampiran` (
   `no_surat` varchar(30) NOT NULL,
-  `file_path` varchar(255) NOT NULL,
-  PRIMARY KEY (`no_surat`),
-  UNIQUE KEY `no_surat` (`no_surat`)
+  `file_path` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_lampiran`
+-- Dumping data for table `surat_lampiran`
 --
 
 INSERT INTO `surat_lampiran` (`no_surat`, `file_path`) VALUES
@@ -576,38 +536,35 @@ INSERT INTO `surat_lampiran` (`no_surat`, `file_path`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_terdistribusi`
+-- Table structure for table `surat_terdistribusi`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_terdistribusi` (
-  `id` int(4) NOT NULL AUTO_INCREMENT,
+`id` int(4) NOT NULL,
   `id_surat` int(4) NOT NULL,
   `penerima` varchar(255) NOT NULL,
   `notif_web` int(4) NOT NULL,
   `notif_app` int(4) NOT NULL,
   `status` varchar(30) NOT NULL,
   `isFavorite` tinyint(4) NOT NULL,
-  `isUnread` tinyint(4) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_surat` (`id_surat`),
-  KEY `penerima` (`penerima`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=108 ;
+  `isUnread` tinyint(4) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_terdistribusi`
+-- Dumping data for table `surat_terdistribusi`
 --
 
 INSERT INTO `surat_terdistribusi` (`id`, `id_surat`, `penerima`, `notif_web`, `notif_app`, `status`, `isFavorite`, `isUnread`) VALUES
-(103, 68, 'hamidillah_ajie', 0, 0, '', 0, 1),
 (104, 83, 'wisnu_dj', 0, 0, '', 0, 1),
 (105, 109, '18', 0, 0, '', 0, 1),
-(106, 110, 'hamidillah_ajie', 0, 0, '', 0, 1),
-(107, 116, 'hamidillah_ajie', 0, 0, '', 0, 1);
+(106, 110, 'hamidillah_ajie', 0, 0, '', 1, 1),
+(107, 116, 'hamidillah_ajie', 0, 0, '', 0, 1),
+(108, 68, 'hamidillah_ajie', 0, 0, '', 0, 1);
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_tujuan`
+-- Table structure for table `surat_tujuan`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_tujuan` (
@@ -621,17 +578,16 @@ CREATE TABLE IF NOT EXISTS `surat_tujuan` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `surat_uploaded`
+-- Table structure for table `surat_uploaded`
 --
 
 CREATE TABLE IF NOT EXISTS `surat_uploaded` (
   `no_surat` varchar(30) NOT NULL,
-  `file_path` text NOT NULL,
-  PRIMARY KEY (`no_surat`)
+  `file_path` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `surat_uploaded`
+-- Dumping data for table `surat_uploaded`
 --
 
 INSERT INTO `surat_uploaded` (`no_surat`, `file_path`) VALUES
@@ -644,11 +600,11 @@ INSERT INTO `surat_uploaded` (`no_surat`, `file_path`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `users`
+-- Table structure for table `users`
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `user_id` int(4) NOT NULL AUTO_INCREMENT,
+`user_id` int(4) NOT NULL,
   `account` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `nama` varchar(255) NOT NULL,
@@ -663,12 +619,11 @@ CREATE TABLE IF NOT EXISTS `users` (
   `alamat_kantor` varchar(50) NOT NULL,
   `jenis_user` varchar(3) NOT NULL,
   `gcm_regid` text NOT NULL,
-  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=13 ;
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
 
 --
--- Dumping data untuk tabel `users`
+-- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`user_id`, `account`, `password`, `nama`, `nip`, `email1`, `email2`, `nohp1`, `nohp2`, `gender`, `id_institusi`, `id_jabatan`, `alamat_kantor`, `jenis_user`, `gcm_regid`, `created`) VALUES
@@ -681,6 +636,167 @@ INSERT INTO `users` (`user_id`, `account`, `password`, `nama`, `nip`, `email1`, 
 (10, 'operator_oie', 'asdfasdf', '', '', '', '', '', '', '', '003002', '003002000', '', '2', '', '2015-10-03 17:29:51'),
 (12, 'firdaus_ibnu', 'asdfasdf', 'Super Admin', '5235117148', 'firdausibnu@hotmail.com', 'firdausibnu@gmail.com', '083891915007', '083891915009', '1', '000000', '000000000', '', '1', '', '2015-10-17 10:02:31');
 
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `email`
+--
+ALTER TABLE `email`
+ ADD PRIMARY KEY (`no`), ADD KEY `penerima` (`penerima`), ADD KEY `id_surat` (`id_surat`);
+
+--
+-- Indexes for table `gcm_users`
+--
+ALTER TABLE `gcm_users`
+ ADD PRIMARY KEY (`id`), ADD KEY `id_institusi` (`id_institusi`);
+
+--
+-- Indexes for table `instansi`
+--
+ALTER TABLE `instansi`
+ ADD PRIMARY KEY (`id_instansi`);
+
+--
+-- Indexes for table `institusi`
+--
+ALTER TABLE `institusi`
+ ADD PRIMARY KEY (`id_institusi`);
+
+--
+-- Indexes for table `jabatan`
+--
+ALTER TABLE `jabatan`
+ ADD PRIMARY KEY (`id_jabatan`);
+
+--
+-- Indexes for table `log_kirim`
+--
+ALTER TABLE `log_kirim`
+ ADD PRIMARY KEY (`no`);
+
+--
+-- Indexes for table `log_respond`
+--
+ALTER TABLE `log_respond`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `operator`
+--
+ALTER TABLE `operator`
+ ADD PRIMARY KEY (`id_operator`), ADD KEY `id_institusi` (`id_institusi`);
+
+--
+-- Indexes for table `pejabat`
+--
+ALTER TABLE `pejabat`
+ ADD PRIMARY KEY (`id_pejabat`);
+
+--
+-- Indexes for table `surat`
+--
+ALTER TABLE `surat`
+ ADD PRIMARY KEY (`id_surat`), ADD KEY `kode_unit` (`file_lampiran`), ADD KEY `pembuat` (`lampiran`);
+
+--
+-- Indexes for table `surat_counter`
+--
+ALTER TABLE `surat_counter`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `surat_kode_hal`
+--
+ALTER TABLE `surat_kode_hal`
+ ADD PRIMARY KEY (`kode_hal`), ADD KEY `kode_hal` (`kode_hal`);
+
+--
+-- Indexes for table `surat_kode_unit`
+--
+ALTER TABLE `surat_kode_unit`
+ ADD PRIMARY KEY (`kode_unit`), ADD KEY `kode_unit` (`kode_unit`);
+
+--
+-- Indexes for table `surat_koreksi`
+--
+ALTER TABLE `surat_koreksi`
+ ADD PRIMARY KEY (`id_koreksi`);
+
+--
+-- Indexes for table `surat_lampiran`
+--
+ALTER TABLE `surat_lampiran`
+ ADD PRIMARY KEY (`no_surat`), ADD UNIQUE KEY `no_surat` (`no_surat`);
+
+--
+-- Indexes for table `surat_terdistribusi`
+--
+ALTER TABLE `surat_terdistribusi`
+ ADD PRIMARY KEY (`id`), ADD KEY `id_surat` (`id_surat`), ADD KEY `penerima` (`penerima`);
+
+--
+-- Indexes for table `surat_uploaded`
+--
+ALTER TABLE `surat_uploaded`
+ ADD PRIMARY KEY (`no_surat`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+ ADD PRIMARY KEY (`user_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `gcm_users`
+--
+ALTER TABLE `gcm_users`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=72;
+--
+-- AUTO_INCREMENT for table `log_kirim`
+--
+ALTER TABLE `log_kirim`
+MODIFY `no` int(4) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `log_respond`
+--
+ALTER TABLE `log_respond`
+MODIFY `id` int(4) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `operator`
+--
+ALTER TABLE `operator`
+MODIFY `id_operator` int(4) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
+--
+-- AUTO_INCREMENT for table `pejabat`
+--
+ALTER TABLE `pejabat`
+MODIFY `id_pejabat` int(4) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=8;
+--
+-- AUTO_INCREMENT for table `surat`
+--
+ALTER TABLE `surat`
+MODIFY `id_surat` int(4) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=131;
+--
+-- AUTO_INCREMENT for table `surat_counter`
+--
+ALTER TABLE `surat_counter`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=4;
+--
+-- AUTO_INCREMENT for table `surat_terdistribusi`
+--
+ALTER TABLE `surat_terdistribusi`
+MODIFY `id` int(4) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=109;
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+MODIFY `user_id` int(4) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=13;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
