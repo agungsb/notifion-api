@@ -646,7 +646,7 @@ function getUser($token) {
         $stmt->execute();
         $output = $stmt->fetch();
         $db = null;
-        echo json_encode($output);
+        echo '{"result": "success", "isUnreads": '.countUnreads($token).', "favorites": '.countFavorites($token).', "isUnsigned": '.  countUnsigned($token).', "data": ' . json_encode($output) . '}';
     } catch (PDOException $e) {
 //error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
         echo "{'error':{text':'" . $e->getMessage() . "'}}";
