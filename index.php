@@ -147,7 +147,7 @@ function hapusUser($token, $account) {
     $decode = JWT::decode($token, TK);
     $jenis_user = $decode->jenis_user;
 
-    if ($jenis_user == '2') {
+    if ($jenis_user == '1') {
 //        echo $account;
 //        echo $id_institusi;
         $query = "DELETE from users WHERE account=:account";
@@ -171,7 +171,7 @@ function hapusInstansi($token, $instansi) {
     $decode = JWT::decode($token, TK);
     $jenis_user = $decode->jenis_user;
 
-    if ($jenis_user == '2') {
+    if ($jenis_user == '1') {
 //        echo $account;
 //        echo $id_institusi;
         $query = "DELETE from instansi WHERE id_instansi=:id_instansi";
@@ -195,7 +195,7 @@ function hapusInstitusi($token, $institusi) {
     $decode = JWT::decode($token, TK);
     $jenis_user = $decode->jenis_user;
 
-    if ($jenis_user == '2') {
+    if ($jenis_user == '1') {
 //        echo $account;
 //        echo $id_institusi;
         $query = "DELETE from institusi WHERE id_institusi=:id_institusi";
@@ -219,7 +219,7 @@ function hapusKodeHal($token, $kode_hal) {
     $decode = JWT::decode($token, TK);
     $jenis_user = $decode->jenis_user;
 
-    if ($jenis_user == '2') {
+    if ($jenis_user == '1') {
 //        echo $account;
 //        echo $id_institusi;
         $query = "DELETE from surat_kode_hal WHERE kode_hal=:kode_hal";
@@ -243,7 +243,7 @@ function hapusKodeUnit($token, $kodeUnit) {
     $decode = JWT::decode($token, TK);
     $jenis_user = $decode->jenis_user;
 
-    if ($jenis_user == '2') {
+    if ($jenis_user == '1') {
 //        echo $account;
 //        echo $id_institusi;
         $query = "DELETE from surat_kode_unit WHERE kode_unit=:kode_unit";
@@ -276,7 +276,7 @@ function editUser($token) {
     die();
 
 
-    if ($jenis_user == '2') {
+    if ($jenis_user == '1') {
         $query = "UPDATE users SET password=:password, id_institusi=:id_institusi WHERE account=:account";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":password", $account);
@@ -735,7 +735,7 @@ function checkKodeHal() {
 function getInstansi() {
 
     $db = getDB();
-    $query = "SELECT instansi.* FROM instansi WHERE id_instansi!='000'";
+    $query = "SELECT instansi.* FROM instansi WHERE id_instansi!='000' order by nama_instansi ASC";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $i = 0;
@@ -750,7 +750,7 @@ function getInstansi() {
 
 function getInstitusi() {
     $db = getDB();
-    $query = "SELECT * FROM institusi WHERE id_instansi !='000' and nama_institusi!='kosong'";
+    $query = "SELECT * FROM institusi WHERE id_instansi !='000' and nama_institusi!='kosong' order by nama_institusi ASC";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $i = 0;
