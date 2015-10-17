@@ -19,6 +19,8 @@
  * your Slim application now by passing an associative array
  * of setting names and values into the application constructor.
  */
+
+// COMEND GG
 require 'config.php';
 require 'db.php';
 require 'JWT.php';
@@ -875,6 +877,10 @@ function editBio() {
     $paramPassword = $req['password'];
     $paramNip = $req['nip'];
     $paramEmail1 = $req['email1'];
+    $paramEmail2 = $req['email2'];
+    $paramNohp1 = $req['nohp1'];
+    $paramNohp2 = $req['nohp2'];
+    
     if (isset($req['email2'])) {
         $paramEmail2 = $req['email2'];
     } else {
