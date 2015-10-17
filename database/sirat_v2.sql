@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Inang: 127.0.0.1
--- Waktu pembuatan: 10 Okt 2015 pada 22.29
+-- Waktu pembuatan: 17 Okt 2015 pada 17.35
 -- Versi Server: 5.5.34
 -- Versi PHP: 5.4.22
 
@@ -80,8 +80,11 @@ CREATE TABLE IF NOT EXISTS `instansi` (
 INSERT INTO `instansi` (`id_instansi`, `nama_instansi`) VALUES
 ('000', 'None'),
 ('001', 'Rektorat'),
-('002', 'Fakultas Teknik'),
-('003', 'Unit Pelayanan Teknis');
+('002', 'Fakultas'),
+('003', 'Unit Pelayanan Teknis'),
+('004', 'Prodi'),
+('005', 'Biro'),
+('006', '-');
 
 -- --------------------------------------------------------
 
@@ -113,7 +116,10 @@ INSERT INTO `institusi` (`id_institusi`, `nama_institusi`, `id_instansi`) VALUES
 ('003000', 'PUSTIKOM', '003'),
 ('003001', 'Perpustakaan', '003'),
 ('003002', 'OIE', '003'),
-('003003', 'Lemlit', '003');
+('003003', 'Lemlit', '003'),
+('004000', 'PTIK', '004'),
+('005000', 'BAUK', '005'),
+('006000', 'SPI', '006');
 
 -- --------------------------------------------------------
 
@@ -256,7 +262,7 @@ CREATE TABLE IF NOT EXISTS `surat` (
   PRIMARY KEY (`id_surat`),
   KEY `kode_unit` (`file_lampiran`),
   KEY `pembuat` (`lampiran`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=117 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=127 ;
 
 --
 -- Dumping data untuk tabel `surat`
@@ -275,7 +281,7 @@ INSERT INTO `surat` (`id_surat`, `subject_surat`, `nama_surat`, `no_surat`, `jen
 (75, 'Test Subject', '', '999/UN.39.18/TU/15', '', '', 'a', 'KP', '003000', '003000000', 'hamidillah_ajie@+id/', 2, 'wisnu_dj', '2015-09-17', '', '', 0, '', '', '', 0, '', '2015-09-19 08:17:42'),
 (80, 'Test Subject', '', '2/UN39.18/KR/15', '', '', 'test baru', 'KR', '003000', '18', 'hamidillah_ajie@+id/', 2, 'ficky_duskarnaen', '2015-09-17', '', '', 0, '', '', '', 0, '', '2015-09-19 08:18:19'),
 (83, 'Undangan Rapat', '', '5/UN39.18/KM/15', '', '', '<p>TEST SURAT DEMO</p>', 'KM', '003000', '003000001', 'wisnu_dj@+id/', 2, 'prasetyo_wp@+id/ficky_duskarnaen', '2015-09-24', '', '', 0, '', '', '', 1, '', '2015-09-19 10:17:43'),
-(85, 'Test Subject', '', '7/UN39.18/AK/15', '', '', '<p>TEST MALEM ~</p>', 'AK', '003000', '003000001', 'ficky_duskarnaen@+id/', 2, '002000000', '2015-09-19', '', '', 0, '', '', '', 2, '', '2015-09-19 16:35:17'),
+(85, 'Test Subject', '', '7/UN39.18/AK/15', '', '', '<p>TEST MALEM ~</p>', 'AK', '003000', '003000001', 'ficky_duskarnaen@+id/', 2, '002000000', '2015-09-19', '', '', 0, '', '', '', 0, '', '2015-10-17 08:56:13'),
 (86, 'Test Subject', '', '8/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 3, '', '2015-09-26', '', '', 0, '', '', '', 0, '', '2015-09-26 16:50:31'),
 (87, 'Test Subject', '', '9/UN39.18/BH/15', '', '', '<p>asad</p>', 'BH', '003000', '18', 'hamidillah_ajie@+id/', 2, '', '2015-09-27', '', '', 0, '', '', '', 0, '', '2015-09-26 17:51:16'),
 (88, 'Test Subject', '', '22/UN39.18/AK/15', '', '', '<p>asdfdf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 1, 'hamidillah_ajie', '2015-10-04', '', '', 0, '', '', '', 0, 'tr', '2015-10-04 14:39:49'),
@@ -306,7 +312,17 @@ INSERT INTO `surat` (`id_surat`, `subject_surat`, `nama_surat`, `no_surat`, `jen
 (113, 'TES SORE', '', '49/UN39.18/BS/15', '', '', '<p>nggak ada lampiran</p>', 'BS', '003000', '18', 'hamidillah_ajie@+id/', 0, 'pak_joni', '2015-10-08', '', '', 0, '', '', '', 0, 'false', '2015-10-07 11:08:10'),
 (114, 'TES PAKE LAMPIRAN', '', '50/UN39.18/BS/15', '', '', '<p>kalo sekarang, ada lampiran</p>', 'BS', '003000', '18', 'hamidillah_ajie@+id/', 1, 'pak_joni', '2015-10-08', '', '', 0, '', '', '', 0, 'false', '2015-10-07 11:10:51'),
 (115, 'TES PAKE LAMPIRAN', '', '51/UN39.18/BS/15', '', '', '<p>kalo sekarang, ada lampiran</p>', 'BS', '003000', '18', 'hamidillah_ajie@+id/', 1, 'pak_joni', '2015-10-08', '', '', 0, '', '', '', 0, 'false', '2015-10-07 11:16:40'),
-(116, 'PERMOHONAN MAAF', '', '52/UN39.18/AK/15', '', '', '<p><b>Tes</b> Surat Mohon Maaf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 1, '', '2015-10-07', '', '', 0, '', '', '', 1, 'false', '2015-10-07 12:19:49');
+(116, 'PERMOHONAN MAAF', '', '52/UN39.18/AK/15', '', '', '<p><b>Tes</b> Surat Mohon Maaf</p>', 'AK', '003000', '18', 'hamidillah_ajie@+id/', 1, '', '2015-10-07', '', '', 0, '', '', '', 1, 'false', '2015-10-07 12:19:49'),
+(117, 'Test Subject', '', '53/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:27'),
+(118, 'Test Subject', '', '54/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:49'),
+(119, 'Test Subject', '', '55/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:49'),
+(120, 'Test Subject', '', '56/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:49'),
+(121, 'Test Subject', '', '57/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:50'),
+(122, 'Test Subject', '', '58/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:50'),
+(123, 'Test Subject', '', '59/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:50'),
+(124, 'Test Subject', '', '60/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:53'),
+(125, 'Test Subject', '', '61/UN39.18/AK/15', '', '', '<p>tes</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:10:53'),
+(126, 'Test Subject', '', '62/UN39.18/AK/15', '', '', '<p>tes 2</p>', 'AK', '003000', '003000001', 'pak_joni@+id/', 1, 'hamidillah_ajie', '2015-10-16', '', '', 0, '', '', '', 0, 'false', '2015-10-16 13:18:25');
 
 -- --------------------------------------------------------
 
@@ -327,7 +343,7 @@ CREATE TABLE IF NOT EXISTS `surat_counter` (
 --
 
 INSERT INTO `surat_counter` (`id`, `id_institusi`, `counter`, `year`) VALUES
-(3, '003000', 52, '2015');
+(3, '003000', 62, '2015');
 
 -- --------------------------------------------------------
 
@@ -500,7 +516,6 @@ INSERT INTO `surat_kode_unit` (`kode_unit`, `deskripsi`, `id_institusi`) VALUES
 ('8.FT', 'Pembantu Dekan III FT', ''),
 ('8.PPs', 'Asdir III PPs', ''),
 ('9', 'Ketua Lembaga Penelitian (LEMLIT)', ''),
-('a', 'a', '003002'),
 ('UN39', 'Universitas Negeri Jakarta / REKTOR', '');
 
 -- --------------------------------------------------------
@@ -546,7 +561,17 @@ INSERT INTO `surat_lampiran` (`no_surat`, `file_path`) VALUES
 ('44/UN39.18/AK/15', 'assets/uploaded/response.pdf'),
 ('50/UN39.18/BS/15', 'assets/attachments/MEMBANDINGKAN-ANALISA-DATA-SET-MENGGUNAKAN-APLIKASI-WEKA-DENGAN-ALGORITMA-ID3-DAN-NAÃVE-BAYES-SECARA-MANUAL.pdf'),
 ('51/UN39.18/BS/15', 'assets/attachments/response.pdf'),
-('52/UN39.18/AK/15', 'assets/attachments/T2-5235134408.pdf');
+('52/UN39.18/AK/15', 'assets/attachments/T2-5235134408.pdf'),
+('53/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('54/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('55/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('56/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('57/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('58/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('59/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('60/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('61/UN39.18/AK/15', 'assets/attachments/response.pdf'),
+('62/UN39.18/AK/15', 'assets/attachments/response.pdf');
 
 -- --------------------------------------------------------
 
@@ -640,21 +665,21 @@ CREATE TABLE IF NOT EXISTS `users` (
   `gcm_regid` text NOT NULL,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=11 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=13 ;
 
 --
 -- Dumping data untuk tabel `users`
 --
 
 INSERT INTO `users` (`user_id`, `account`, `password`, `nama`, `nip`, `email1`, `email2`, `nohp1`, `nohp2`, `gender`, `id_institusi`, `id_jabatan`, `alamat_kantor`, `jenis_user`, `gcm_regid`, `created`) VALUES
-(1, 'hamidillah_ajie', 'asdfasdf', 'Hamidillah Ajie', '123456789', 'havid@yahoo.com', 'havid@hotmail.com', '1234', '56789', '1', '003000', '003000001', '', '3', '', '2015-09-27 16:23:08'),
+(1, 'hamidillah_ajie', 'asdfasdf', 'Hamidillah Ajie', '123456789', 'havid@yahoo.com', 'havid@hotmail.com', '1234', '56789', '1', '003000', '003000001', '', '3', '', '2015-10-16 13:26:36'),
 (2, 'ficky_duskarnaen', 'asdfasdf', 'M. Ficky Duskarnaen', '123456789', 'ficky_duskarnaen@hotmail.com', 'ficky_duskarnaen2@hotmail.com', '', '', '1', '003000', '18', '', '3', '', '2015-09-27 16:23:10'),
 (4, 'wisnu_dj', 'asdfasdf', 'Wisnu Djatmiko', '123456789', 'wisnu_dj@gmail.com', 'w_djatmikoy@hotmail.com', '', '', '1', '002000', '002000000', '', '3', '', '2015-09-27 16:23:12'),
-(5, 'pak_joni', 'asdfasdf', 'Pak Joni', '123456789', 'pak_joni@gmail.com', 'pak_joni@hotmail.com', '', '', '1', '002000', '002000001', '', '2', '', '2015-09-27 06:41:48'),
 (6, 'widodo', 'asdfasdf', 'Widodo', '123456789', 'widodo@gmail.com', 'widodo@hotmail.com', '', '', '1', '000000', '000000000', '', '3', '', '2015-09-27 16:23:14'),
 (7, 'prasetyo_wp', 'asdfasdf', 'Prasetyo Wibowo Yunanto', '123456789', 'prasetyo_wp@gmail.com', 'prasetyo@yahoo.com', '', '', '1', '002000', '002000003', '', '3', '', '2015-09-27 16:23:16'),
-(8, 'firdaus_ibnu', 'asdfasdf', 'Firdaus Ibnu', '123456789', 'firdausibnuu@gmail.com', 'firdausibnu@hotmail.com', '083891915007', '', 'L', '003000', '003000003', '', '2', '', '2015-10-03 17:22:37'),
-(10, 'operator_oie', 'asdfasdf', '', '', '', '', '', '', '', '003002', '003002000', '', '2', '', '2015-10-03 17:29:51');
+(8, 'operator_pustikom', 'asdfasdf', 'Firdaus Ibnu', '123456789', 'firdausibnuu@gmail.com', 'firdausibnu@hotmail.com', '083891915007', '', 'L', '003000', '003000003', '', '2', '', '2015-10-15 05:34:28'),
+(10, 'operator_oie', 'asdfasdf', '', '', '', '', '', '', '', '003002', '003002000', '', '2', '', '2015-10-03 17:29:51'),
+(12, 'firdaus_ibnu', 'asdfasdf', 'Super Admin', '5235117148', 'firdausibnu@hotmail.com', 'firdausibnu@gmail.com', '083891915007', '083891915009', '1', '000000', '000000000', '', '1', '', '2015-10-17 10:02:31');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
