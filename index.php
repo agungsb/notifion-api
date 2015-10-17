@@ -395,14 +395,15 @@ function getAllSurats($token, $offset, $limit) {
             } else {
                 $role = $account;
             }
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']));
+            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']));
             $i++;
         }
     } else {
-        $output = [];
+        $response = [];
     }
     $db = null;
-    echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
+    $output = '"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($response);
+    echo '{' . $output . '}';
 }
 
 function getAllSuratsKeluar($token, $offset, $limit) {
@@ -800,7 +801,7 @@ function authLogin() {
             $token['jenis_user'] = $result['jenis_user'];
             $token['valid'] = true;
             $encoded = JWT::encode($token, TK);
-            $output = array('status' => true, 'token' => $encoded, 'userid' => $result['user_id'], 'account' => $result['account'], 'nama' => $result['nama'], 'jabatan' => $result['id_jabatan'], 'institusi' => $result['id_institusi'], 'nama_institusi' => $result['nama_institusi'], 'jenis_user' => $result['jenis_user'], 'isUnreads' => countUnreads($encoded), 'favorites' => countFavorites($encoded), 'isUnsigned' => countUnsigned($encoded));
+            $output = array('status' => true, 'token' => $encoded, 'userid' => $result['user_id'], 'account' => $result['account'], 'nama' => $result['nama'], 'jabatan' => $result['id_jabatan'], 'institusi' => $result['id_institusi'], 'nama_institusi' => $result['nama_institusi'], 'jenis_user' => $result['jenis_user'], 'isUnreads' => countUnreads($encoded), 'isFavorites' => countFavorites($encoded), 'isUnsigned' => countUnsigned($encoded), 'isCorrected' => countCorrected($result['id_institusi']));
         } else {
 //            $output = array('status' => false, 'message' => $paramAccount . ' - ' . $paramPassword);
             $output = array('status' => false, 'header' => $_SERVER['CONTENT_TYPE'], 'message' => $paramAccount . ' - ' . $paramPassword);

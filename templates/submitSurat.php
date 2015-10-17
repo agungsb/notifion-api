@@ -29,9 +29,8 @@ function submitSurat() {
         for ($i = 0; $i < count($paramPenandatangan); $i++) {
             $penandatangan = $paramPenandatangan[0]->identifier;
         }
-
-        echo '{"account": "' . $penandatangan . '", "isUnreads": ' . countUnreads('', '', $penandatangan) . ', "isFavorites": ' . countFavorites('', '', $penandatangan) . ', "isUnsigned": ' . countUnsigned('', '', $penandatangan) . '}';
-        die();
+//        echo '{"account": "' . $penandatangan . '"}';
+//        die();
         if (isset($req['isi'])) {
             $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
         } else {
@@ -104,7 +103,7 @@ function submitSurat() {
                 $gcm = new GCM();
                 $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
                 $result = $gcm->send_notification($registration_ids, $pesan);
-                echo '{"result": "success"}';
+                echo '{"result": "success", "account": "' . $penandatangan . '"}';
             } else {
                 echo '{"result": "Gagal mengeksekusi query"}';
             }
