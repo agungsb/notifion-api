@@ -19,7 +19,6 @@
  * your Slim application now by passing an associative array
  * of setting names and values into the application constructor.
  */
-
 // COMEND GG
 require 'config.php';
 require 'db.php';
@@ -461,14 +460,12 @@ function getLampiranFilePath($no_surat) {
 function getAllSuratsDraft($token, $offset, $limit) {
     $db = getDB();
     $decode = JWT::decode($token, TK);
-    $account = $decode->account;
-    $id_jabatan = $decode->id_jabatan;
+    $id_institusi = $decode->id_institusi;
 
-    $query = "SELECT surat.*, surat_koreksi.koreksi, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `surat_koreksi`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan=:account or surat.penandatangan=:idJabatan) AND surat.ditandatangani='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal AND surat.no_surat = surat_koreksi.no_surat ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
+    $query = "SELECT surat.*, surat_koreksi.koreksi, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `surat_koreksi`, `institusi`, `surat_kode_hal` WHERE surat.kode_lembaga_pengirim = :id_institusi AND surat.ditandatangani='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal AND surat.no_surat = surat_koreksi.no_surat ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
 
     $stmt = $db->prepare($query);
-    $stmt->bindValue(":account", $account);
-    $stmt->bindValue(":idJabatan", $id_jabatan);
+    $stmt->bindValue(":id_institusi", $id_institusi);
     $stmt->bindValue(":limit", (int) $limit, PDO::PARAM_INT);
     $stmt->bindValue(":offset", (int) $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -575,12 +572,13 @@ function listTembusan($dbh, $string) {
     return $join;
 }
 
-function countFavorites($token) {
-
+function countFavorites($token = '', $account = '', $id_jabatan = '') {
     $db = getDB();
-    $decode = JWT::decode($token, TK);
-    $account = $decode->account;
-    $id_jabatan = $decode->id_jabatan;
+    if ($token != '') {
+        $decode = JWT::decode($token, TK);
+        $account = $decode->account;
+        $id_jabatan = $decode->id_jabatan;
+    }
 
 //    if ($jabatan->status) {
     $query = "SELECT surat.*, surat_terdistribusi.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat_terdistribusi`, `surat`, `institusi`, `surat_kode_hal` WHERE (surat_terdistribusi.penerima=:account or surat_terdistribusi.penerima=:idJabatan) AND surat_terdistribusi.id_surat = surat.id_surat AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.ditandatangani = '1' AND surat_kode_hal.kode_hal = surat.kode_hal AND surat_terdistribusi.isFavorite = :isFavorite";
@@ -596,11 +594,13 @@ function countFavorites($token) {
     return $stmt->rowCount();
 }
 
-function countUnreads($token) {
+function countUnreads($token = '', $account = '', $id_jabatan = '') {
     $db = getDB();
-    $decode = JWT::decode($token, TK);
-    $account = $decode->account;
-    $id_jabatan = $decode->id_jabatan;
+    if ($token != '') {
+        $decode = JWT::decode($token, TK);
+        $account = $decode->account;
+        $id_jabatan = $decode->id_jabatan;
+    }
 
 //    if ($jabatan->status) {
     $query = "SELECT surat.*, surat_terdistribusi.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat_terdistribusi`, `surat`, `institusi`, `surat_kode_hal` WHERE (surat_terdistribusi.penerima=:account or surat_terdistribusi.penerima=:idJabatan) AND surat_terdistribusi.id_surat = surat.id_surat AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.ditandatangani = '1' AND surat_kode_hal.kode_hal = surat.kode_hal AND surat_terdistribusi.isUnread = 1";
@@ -633,6 +633,17 @@ function countUnsigned($token = '', $account = '', $id_jabatan = '') {
     return $stmt->rowCount();
 }
 
+function countCorrected($id_institusi) {
+    $db = getDB();
+    $query = "SELECT surat.* FROM `surat` WHERE surat.kode_lembaga_pengirim = :id_institusi AND surat.ditandatangani = '2'";
+
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_institusi", $id_institusi);
+    $stmt->execute();
+    $db = null;
+    return $stmt->rowCount();
+}
+
 function getUser($token) {
     $db = getDB();
     $decode = JWT::decode($token, TK);
@@ -646,9 +657,13 @@ function getUser($token) {
         $stmt = $db->prepare($query);
         $stmt->bindParam("account", $account);
         $stmt->execute();
-        $output = $stmt->fetch();
+        $row = $stmt->fetch();
         $db = null;
-        echo '{"result": "success", "isUnreads": '.countUnreads($token).', "favorites": '.countFavorites($token).', "isUnsigned": '.  countUnsigned($token).', "data": ' . json_encode($output) . '}';
+        $output = '"result": "success", "isUnreads": ' . countUnreads($token) . ', "favorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "data": ' . json_encode($row);
+        if ($row['jenis_user'] == '2') {
+            $output .= ', "isCorrected": ' . countCorrected($row['id_institusi']);
+        }
+        echo '{' . $output . '}';
     } catch (PDOException $e) {
 //error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
         echo "{'error':{text':'" . $e->getMessage() . "'}}";
@@ -880,7 +895,7 @@ function editBio() {
     $paramEmail2 = $req['email2'];
     $paramNohp1 = $req['nohp1'];
     $paramNohp2 = $req['nohp2'];
-    
+
     if (isset($req['email2'])) {
         $paramEmail2 = $req['email2'];
     } else {
@@ -1041,12 +1056,7 @@ function addInstansi() {
     $paramIdInstansiNew = tambah0($paramIdInstansi, 1);
     $newId = $paramIdInstansiNew . "000";
 
-//    echo $paramIdInstansiNew;
-//    echo '-';
-//    echo $newId;
-//    die();
     for ($i = 0; $i < count($checkNama); $i++) { //pengecekan institusi yang belum ada operatornya
-//        echo $checkUserOp[$i]->account;
         if ($paramInstansi != $checkNama[$i]->nama_instansi) {
             $check = 0;
         } else {
@@ -1055,9 +1065,6 @@ function addInstansi() {
         }
     }
     $param0 = 'kosong';
-//    echo $paramIdInstansiNew;
-//    echo '-'. $check;
-//    die();
     if ($check == 0) {
         $query = "INSERT INTO instansi (id_instansi, nama_instansi) VALUES (:id_instansi, :nama_instansi)";
         $stmt = $db->prepare($query);
@@ -1121,11 +1128,7 @@ function addInstitusi() {
     $newIdInstitusi = $paramIdInstansiNew . "000";
     $namaNew = 'kosong';
 
-//    echo $newIdInstitusi;
-//
-//    die();
     for ($i = 0; $i < count($checkNamaInstitusi); $i++) { //pengecekan institusi yang belum ada operatornya
-//        echo $checkUserOp[$i]->account;
         if ($paramNamaInstitusi != $checkNamaInstitusi[$i]->nama_institusi) {
             $check = 0;
         } else {
@@ -1143,10 +1146,7 @@ function addInstitusi() {
             break;
         }
     }
-//    echo $paramIdInstansiNew;
-//    echo '-';
-//    echo $check2;
-//    
+
     if ($check == 0 && $check2 == 0) {
         $sql = "SELECT id_institusi from institusi WHERE id_instansi =:id_instansi";
         $stmt2 = $db->prepare($sql);
@@ -1159,8 +1159,7 @@ function addInstitusi() {
                 $i++;
             }
             $paramIdInsititusiNew = tambah0($paramIdInstansiNew, 0) . tambah0(intval(substr($paramIdInstitusi[$rowCount - 1], -3)) + 1, 0);
-//    echo $paramIdInsititusiNew;
-//    die();
+
             $query = "INSERT INTO institusi (id_instansi, nama_institusi, id_institusi) VALUES (:id_instansi, :nama_institusi, :id_institusi)";
             $stmt = $db->prepare($query);
             $stmt->bindValue(":id_instansi", $paramIdInstansiNew);
@@ -1334,6 +1333,7 @@ function koreksiSurat() {
     $decode = JWT::decode($token, TK);
     $account = $decode->account;
     $id_jabatan = $decode->id_jabatan;
+    $id_institusi = $decode->id_institusi;
 
     $query = "SELECT surat.no_surat FROM surat WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
     $stmt = $db->prepare($query);
@@ -1345,7 +1345,7 @@ function koreksiSurat() {
         if ($stmt->rowCount() == 1) {
             $row = $stmt->fetch();
 //            echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
-            sendToDraft($db, $token, $id_surat, $row['no_surat'], $account, $id_jabatan, $pesan);
+            sendToDraft($db, $token, $id_surat, $row['no_surat'], $account, $id_jabatan, $pesan, $id_institusi);
         } else {
             echo '{"result": "Error", "message": "Action not granted"}';
         }
@@ -1355,7 +1355,7 @@ function koreksiSurat() {
     }
 }
 
-function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $pesan) {
+function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $pesan, $id_institusi) {
     $query = "UPDATE `surat` SET surat.ditandatangani='2' WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_surat", $id_surat);
@@ -1371,12 +1371,10 @@ function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $
             $stmt2->bindValue(":no_surat", $no_surat);
             $stmt2->bindValue(":koreksi", $pesan);
             if ($stmt2->execute()) {
-                echo '{"result": "Sukses", "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . '}';
+                echo '{"result": "Success", "account": "' . $id_institusi . '", "isCorrected": ' . countCorrected($id_institusi) . '}';
             }
         }
         $db = null;
-//        echo '{"result": "' . $id_surat . '"}';
-//        echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $id_surat . '}';
     } catch (PDOException $ex) {
         echo '{"result": "Error", "message": "' . $ex->getMessage() . '"}';
     }
