@@ -649,9 +649,6 @@ function getUser($token) {
     $decode = JWT::decode($token, TK);
     $account = $decode->account;
     $jabatan = json_decode(checkUsersJabatan($token));
-    if ($jabatan->status) {
-        
-    }
     $query = "SELECT users.*, jabatan.jabatan FROM `users`, `jabatan` WHERE users.account=:account AND users.id_jabatan = jabatan.id_jabatan";
     try {
         $stmt = $db->prepare($query);
@@ -659,7 +656,7 @@ function getUser($token) {
         $stmt->execute();
         $row = $stmt->fetch();
         $db = null;
-        $output = '"result": "success", "isUnreads": ' . countUnreads($token) . ', "favorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "data": ' . json_encode($row);
+        $output = '"result": "success", "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "data": ' . json_encode($row);
         if ($row['jenis_user'] == '2') {
             $output .= ', "isCorrected": ' . countCorrected($row['id_institusi']);
         }
@@ -803,7 +800,7 @@ function authLogin() {
             $token['jenis_user'] = $result['jenis_user'];
             $token['valid'] = true;
             $encoded = JWT::encode($token, TK);
-            $output = array('status' => true, 'token' => $encoded, 'userid' => $result['user_id'], 'account' => $result['account'], 'nama' => $result['nama'], 'jabatan' => $result['id_jabatan'], 'institusi' => $result['id_institusi'], 'nama_institusi' => $result['nama_institusi'], 'jenis_user' => $result['jenis_user']);
+            $output = array('status' => true, 'token' => $encoded, 'userid' => $result['user_id'], 'account' => $result['account'], 'nama' => $result['nama'], 'jabatan' => $result['id_jabatan'], 'institusi' => $result['id_institusi'], 'nama_institusi' => $result['nama_institusi'], 'jenis_user' => $result['jenis_user'], 'isUnreads' => countUnreads($encoded), 'favorites' => countFavorites($encoded), 'isUnsigned' => countUnsigned($encoded));
         } else {
 //            $output = array('status' => false, 'message' => $paramAccount . ' - ' . $paramPassword);
             $output = array('status' => false, 'header' => $_SERVER['CONTENT_TYPE'], 'message' => $paramAccount . ' - ' . $paramPassword);
