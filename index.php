@@ -395,7 +395,7 @@ function getAllSurats($token, $offset, $limit) {
             } else {
                 $role = $account;
             }
-            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN));
+            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
     } else {
@@ -435,8 +435,8 @@ function getAllSuratsKeluar($token, $offset, $limit) {
 }
 
 function uploadedFilePath($no_surat) {
+    $url = $_SERVER['SERVER_NAME'];
     $db = getDB();
-
     $query = "SELECT surat_uploaded.file_path FROM `surat`, `surat_uploaded` WHERE surat.no_surat = :no_surat AND surat.no_surat = surat_uploaded.no_surat";
 
     $stmt = $db->prepare($query);
@@ -445,6 +445,7 @@ function uploadedFilePath($no_surat) {
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             $row = $stmt->fetch();
+//            $result = "http://$url/" . $row['file_path'];
             $result = $row['file_path'];
         } else {
             $result = "";
@@ -533,7 +534,7 @@ function getAllFavorites($token, $offset, $limit) {
                 $role = $account;
             }
 //            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "tanggal" => convertDate($row['tanggal_surat']));
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => $row['tembusan'], "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN));
+            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => $row['tembusan'], "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
     } else {

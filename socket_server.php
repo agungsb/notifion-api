@@ -50,11 +50,13 @@ while (true) {
             $received_data = json_decode($received_text); //json decode 
             
             $tipe = $received_data->tipe;
-            $nama = $received_data->nama;
-            $data = $received_data->data;
+            $account = $received_data->account;
+//            $nama = $received_data->nama;
+//            $data = $received_data->data;
             
             //prepare data to be sent to client
-            $response_text = mask(json_encode(array('tipe' => $tipe, 'nama'=>$nama, 'data'=>$data)));
+//            $response_text = mask(json_encode(array('tipe' => $tipe, 'nama'=>$nama, 'data'=>$data)));
+            $response_text = mask(json_encode(array('tipe' => $tipe, 'account'=>$account)));
             send_message($response_text); //send data
             break 2; //exist this loop
         }
