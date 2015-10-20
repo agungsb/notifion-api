@@ -59,6 +59,7 @@ fitur tambahan.
 -listing favourite (done)
 -pushNotification untuk surat keluar, koreksi (done)
 -pushNotification untuk surat Masuk (Not Yet)
+-membetulkan preview di surat
 
 
 hasil presentasi :
