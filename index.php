@@ -72,7 +72,9 @@ $app->delete('/delete', function () {
 $app->get('/checkUserOp', 'checkUserOp'); //testing only
 $app->get('/users', 'getAllUsers');
 $app->get('/users2', 'getAllUsersOP');
+$app->get('/users3', 'getAllUsersBiasa');
 $app->get('/tujuan', 'getTujuan');
+$app->get('/jabatansIns/:token', 'getJabatanIns');
 $app->get('/penandatangan/:token', 'getPenandatangan');
 $app->get('/user/:token', 'getUser');
 $app->get('/surats/:token/:offset/:limit', 'getAllSurats');
@@ -96,11 +98,14 @@ $app->post('/registerGCMUser', 'registerGCMUser');
 $app->post('/unregisterGCMUser', 'unregisterGCMUser');
 $app->post('/submitSurat', 'submitSurat');
 $app->post('/editBio', 'editBio');
+$app->post('/addUser', 'addUser');
 $app->post('/addUserOp', 'addUserOp');
 $app->post('/addInstansi', 'addInstansi');
 $app->post('/addInstitusi', 'addInstitusi');
 $app->post('/addKodeHal', 'addKodeHal');
 $app->post('/addKodeUnit', 'addKodeUnit');
+$app->post('/addJabatan', 'addJabatan');
+$app->post('/setJabatan', 'setJabatan');
 $app->post('/attachments', 'saveAttachments'); // testing only
 $app->put('/accSurat', 'accSurat');
 $app->put('/koreksiSurat', 'koreksiSurat');
@@ -108,6 +113,8 @@ $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
 $app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
+$app->delete('/hapusUserBiasa/:token/:account', 'hapusUserBiasa');
+$app->delete('/hapusJabatan/:token/:jabatan', 'hapusJabatan');
 $app->delete('/hapusInstansi/:token/:instansi', 'hapusInstansi');
 $app->delete('/hapusInstitusi/:token/:institusi', 'hapusInstitusi');
 $app->delete('/hapusKodeHal/:token/:kode_hal', 'hapusKodeHal');
@@ -166,6 +173,44 @@ function hapusUser($token, $account) {
             }
             echo '{"result": "Sukses Hapus Account Operator"}';
         }
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusUserBiasa($token, $account) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '1') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from users WHERE account=:account";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":account", $account);
+        $stmt->execute();
+        echo '{"result": "Berhasil Hapus User"}';
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusJabatan($token, $jabatan) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from jabatan WHERE jabatan=:jabatan";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":jabatan", $jabatan);
+        $stmt->execute();
+        echo '{"result": "Berhasil Hapus Jabatan"}';
     } else {
         echo '{"result": "Bukan Hak Nya"}';
     }
@@ -325,6 +370,43 @@ function getAllUsersOP() {
     }
 }
 
+function getAllUsersBiasa() {
+    $sql = "SELECT users.* from users WHERE jenis_user='4'";
+    try {
+        $db = getDB();
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $output = $stmt->fetchAll(PDO::FETCH_OBJ);
+        $db = null;
+        echo '{"result": ' . json_encode($output) . '}';
+    } catch (PDOException $e) {
+//error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
+        echo "{'error':{text':'" . $e->getMessage() . "'}}";
+    }
+}
+
+
+function getJabatanIns($token){
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $id_institusi = $decode->id_institusi;
+    
+    $sql = "SELECT * from jabatan WHERE id_institusi = :id_institusi";
+    try {
+        $db = getDB();
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(":id_institusi", $id_institusi);
+        $stmt->execute();
+        $output = $stmt->fetchAll(PDO::FETCH_OBJ);
+        $db = null;
+        echo '{"result": ' . json_encode($output) . '}';
+    } catch (PDOException $e) {
+//error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
+        echo "{'error':{text':'" . $e->getMessage() . "'}}";
+    }
+}
+
 function getTujuan() {
     $sql = "SELECT users.* FROM users WHERE jenis_user != 1";
     try {
@@ -430,7 +512,7 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $test = getAccountName($db, $row['penandatangan']); 
+            $test = getAccountName($db, $row['penandatangan']);
             $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => $test['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
@@ -732,10 +814,10 @@ function getAllPejabats() {
 
 function getPejabatsIns($token) {
     $db = getDB();
-    
+
     $decode = JWT::decode($token, TK);
     $id_institusi = $decode->id_institusi;
-    
+
     $query = "SELECT users.nama, users.account, jabatan.jabatan FROM users, instansi, institusi, jabatan, pejabat WHERE users.account = pejabat.account AND pejabat.id_jabatan = jabatan.id_jabatan AND jabatan.id_institusi = :id_institusi AND institusi.id_instansi = instansi.id_instansi AND institusi.id_institusi=:id_institusi";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_institusi", $id_institusi);
@@ -1070,6 +1152,58 @@ function addUserOp() {
     $db = null;
 }
 
+function addUser() {
+    $db = getDB();
+    global $app;
+
+    $req = json_decode($app->request()->getBody(), true);
+    $checkUserBiasa = json_decode(checkUserBiasa($db));
+
+    $paramAccount = $req['account'];
+    $paramPassword = $req['password'];
+    $paramIdJabatan = '000000000';
+    $paramIdInstitusi = '000000';
+    $paramJenisUser = '4';
+
+    for ($i = 0; $i < count($checkUserBiasa); $i++) { //pengecekan institusi yang belum ada operatornya
+//        echo $checkUserOp[$i]->account;
+        if ($paramAccount != $checkUserBiasa[$i]->account) {
+            $check = 0;
+        } else {
+            $check = 1;
+            break;
+        }
+    }
+
+    if ($check == 0) {
+        $query = "INSERT INTO users (account, password, id_institusi, id_jabatan, jenis_user) VALUES (:account, :password, :id_institusi, :id_jabatan, :jenis_user)";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":account", $paramAccount);
+        $stmt->bindValue(":password", $paramPassword);
+        $stmt->bindValue(":id_institusi", $paramIdInstitusi);
+        $stmt->bindValue(":id_jabatan", $paramIdJabatan);
+        $stmt->bindValue(":jenis_user", $paramJenisUser);
+        $stmt->execute();
+        echo '{"result": "Sukses Buat User"}';
+    } else {
+        echo '{"result": "Account ini Sudah ada"}';
+    }
+}
+
+function checkUserBiasa($db) {
+//$db = getDB();
+    $sql = "SELECT * from users WHERE jenis_user='3' OR jenis_user='4'";
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("account" => $row['account']);
+        $i++;
+    }
+//    echo '{"result": ' . json_encode($output) . '}';
+    return json_encode($output);
+}
+
 function checkUserOp($db) {
 //$db = getDB();
     $sql = "SELECT users.*, institusi.nama_institusi from users, institusi WHERE jenis_user='2' AND users.id_institusi=institusi.id_institusi";
@@ -1096,6 +1230,22 @@ function checkUserJabatan($db) {
     }
 //    echo '{"result": ' . json_encode($output) . '}';    
     return json_encode($output);
+}
+
+
+function checkPejabat($db){
+    
+    $sql = "SELECT * from pejabat";
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_pejabat" => $row['id_pejabat'], "account" => $row['account'], "id_jabatan" => $row['id_jabatan']);
+        $i++;
+    }
+//    echo '{"result": ' . json_encode($output) . '}';    
+    return json_encode($output);
+    
 }
 
 function addInstansi() {
@@ -1302,6 +1452,77 @@ function addKodeUnit() {
         echo '{"result": "gagal"}';
     }
 }
+
+function addJabatan(){
+    
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+    
+    $paramJabatan = $req['jabatan'];
+    $token = $req['token'];
+    
+    $decode = JWT::decode($token, TK);
+    $id_institusi = $decode->id_institusi;
+    
+    $id_institusi2 = $id_institusi."000";
+    $id_jabatan = increment4($id_institusi2, 1);
+    
+    $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_jabatan", $id_jabatan);
+    $stmt->bindValue(":id_institusi", $id_institusi);
+    $stmt->bindValue(":jabatan", $paramJabatan);
+    if($stmt->execute()){
+        echo '{"result": "Berhasil Tambah Jabatan"}';
+    }else{
+        echo '{"result": "Gagal Tambah Jabatan"}';
+    }
+    
+}
+
+function setJabatan(){
+    
+    $db = getDB();
+    global $app;
+    $req = json_decode($app->request()->getBody(), true);
+    
+    $paramJabatan = $req['jabatan'];
+    $paramAccount = $req['account'];
+    $token = $req['token'];
+    
+    echo $paramJabatan;
+    echo '-';
+    echo $paramAccount;
+    die();
+    $decode = JWT::decode($token, TK);
+    $id_institusi = $decode->id_institusi;
+    
+    $checkPejabat = json_decode(checkPejabat($db));
+    
+    for ($i = 0; $i < count($checkPejabat); $i++) { //pengecekan pejabat yang belum ada 
+//        echo $checkUserOp[$i]->account;
+        if ($paramInstitusi != $checkPejabat[$i]->id_jabatan) {
+            $check = 0;
+        } else {
+            $check = 1;
+            break;
+        }
+    }
+    
+    $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_jabatan", $id_jabatan);
+    $stmt->bindValue(":id_institusi", $id_institusi);
+    $stmt->bindValue(":jabatan", $paramJabatan);
+    if($stmt->execute()){
+        echo '{"result": "Berhasil Tambah Jabatan"}';
+    }else{
+        echo '{"result": "Gagal Tambah Jabatan"}';
+    }
+    
+}
+
 
 function getKodeUnit($db, $id_institusi) {
     $db = getDB();
@@ -1659,6 +1880,18 @@ function tambah02($input, $inc) {
         } else {
             $out = '0';
             $input = $out . (intval($input) + $inc);
+            return $input;
+        }
+    }
+}
+
+function increment4($input, $inc){
+    if (strlen(intval($input)) == 7) {
+        if (intval($input) != 9) {
+            $out = '00';
+            $input = $out . (intval($input) + $inc);
+            return $input;
+        } else {
             return $input;
         }
     }
