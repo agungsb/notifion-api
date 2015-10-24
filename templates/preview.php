@@ -19,7 +19,7 @@ function previewSurat() {
 
     $dbh = getDB();
 
-    $query = "SELECT surat.*, surat_kode_hal.deskripsi, users.nama, users.nip, jabatan.jabatan from surat, surat_kode_hal, users, jabatan WHERE surat.id_surat=:id_surat AND (surat.penandatangan = :id_jabatan OR surat.penandatangan = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat.penandatangan = users.account) OR (surat.penandatangan = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
+    $query = "SELECT surat.*, surat_kode_hal.deskripsi, users.nama, jabatan.jabatan from surat, surat_kode_hal, users, jabatan WHERE surat.id_surat=:id_surat AND (surat.penandatangan = :id_jabatan OR surat.penandatangan = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat.penandatangan = users.account) OR (surat.penandatangan = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
 
     $stmt = $dbh->prepare($query);
     $stmt->bindValue(':id_surat', (int) $id, PDO::PARAM_INT);
@@ -36,7 +36,6 @@ function previewSurat() {
         $lam = $row['lampiran'];
         $nama_pejabat = $row['nama'];
         $nosurat = $row['no_surat'];
-        $nip = $row['nip'];
         $tanggal = convertDate($row['tanggal_surat']);
 
         // Cari nama user berdasarkan jabatan parameter 'tujuan' //

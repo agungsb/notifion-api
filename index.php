@@ -430,7 +430,8 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $test = getAccountName($db, $row['penandatangan']); 
+            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => $test['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
     } else {

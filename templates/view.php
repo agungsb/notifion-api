@@ -42,9 +42,14 @@ function viewSurat($id, $token) {
         $tanggal = convertDate($row['tanggal_surat']);
 
         $tjb = getJabatan($dbh, $row['penandatangan']);
-        $nama_pejabat = getAccountName($dbh, $row['penandatangan']);
+        
+        $test = getAccountName($dbh, $row['penandatangan']);
+        $nama_pejabat = $test['nama'];
+        $nip = $test['nip'];
 
-        $tembusan = explode("@+id/", $row['tembusan']);
+        if ($row['tembusan'] != '') {
+            $tembusan = explode("@+id/", $row['tembusan']);
+        }
 
         // Cari nama user berdasarkan jabatan parameter 'tujuan' //
         $query2 = "SELECT users.nama FROM users WHERE users.id_jabatan = :tujuan OR users.account = :tujuan";
@@ -110,13 +115,14 @@ function viewSurat($id, $token) {
     $pdf->MultiCell(170, 0, 'NIP' . ".$nip.", 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
 
 //Tembusan
-    $pdf->setCellMargins(0, 10, 0, 0);
-    $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
-
-    $pdf->setCellMargins(0, 0, 0, 0);
-    for ($i = 0; $i < count($tembusan); $i++) {
-        if ($tembusan[$i] != '') {
-            $pdf->MultiCell(170, 0, ($i + 1) . '. ' . getJabatan($dbh, $tembusan[$i]), 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+    if ($tembusan == null) {
+        $pdf->MultiCell(170, 0, '', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+    } else {
+        $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+        for ($i = 0; $i < count($tembusan); $i++) {
+            if ($tembusan[$i] != '') {
+                $pdf->MultiCell(170, 0, getJabatan($dbh, $tembusan[$i]), 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+            }
         }
     }
 
@@ -151,11 +157,11 @@ function viewSurat($id, $token) {
 }
 
 function getAccountName($dbh, $params) {
-    $query = "SELECT nama FROM users WHERE account='" . $params . "' or id_jabatan ='" . $params . "'";
+    $query = "SELECT nama, nip FROM users WHERE account='" . $params . "' or id_jabatan ='" . $params . "'";
     $stmt = $dbh->prepare($query);
     $stmt->execute();
     $row = $stmt->fetch();
-    return $row['nama'];
+    return $row;
 }
 
 function getJabatan($dbh, $params) {
