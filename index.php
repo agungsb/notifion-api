@@ -80,6 +80,7 @@ $app->get('/suratsKeluar/:token/:offset/:limit', 'getAllSuratsKeluar');
 $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
 $app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');
 $app->get('/pejabats', 'getAllPejabats');
+$app->get('/pejabatsIns/:token', 'getPejabatsIns');
 $app->get('/kodeHals', 'getKodeHals');
 $app->get('/kodeUnits', 'getKodeUnits2');
 $app->get('/instansi', 'getInstansi');
@@ -157,7 +158,12 @@ function hapusUser($token, $account) {
             $sql = "DELETE from jabatan WHERE jabatan=:account";
             $stmt2 = $db->prepare($sql);
             $stmt2->bindValue(":account", $account);
-            $stmt2->execute();
+            if ($stmt2->execute()) {
+                $sql2 = "DELETE from pejabat WHERE account=:account";
+                $stmt3 = $db->prepare($sql2);
+                $stmt3->bindValue(":account", $account);
+                $stmt3->execute();
+            }
             echo '{"result": "Sukses Hapus Account Operator"}';
         }
     } else {
@@ -320,14 +326,14 @@ function getAllUsersOP() {
 }
 
 function getTujuan() {
-    $sql = "SELECT users.* FROM users";
+    $sql = "SELECT users.* FROM users WHERE jenis_user != 1";
     try {
         $db = getDB();
         $stmt = $db->prepare($sql);
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['nama'], "identifier" => $row['account'], "keterangan" => "Dosen");
+            $output[$i] = array("deskripsi" => $row['nama'], "identifier" => $row['account'], "keterangan" => "Dosen/Karyawan");
             $i++;
         }
         $query = "SELECT jabatan.*, institusi.nama_institusi FROM jabatan, institusi WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = jabatan.id_institusi";
@@ -723,6 +729,25 @@ function getAllPejabats() {
     echo json_encode($output);
 }
 
+function getPejabatsIns($token) {
+    $db = getDB();
+    
+    $decode = JWT::decode($token, TK);
+    $id_institusi = $decode->id_institusi;
+    
+    $query = "SELECT users.nama, users.account, jabatan.jabatan FROM users, instansi, institusi, jabatan, pejabat WHERE users.account = pejabat.account AND pejabat.id_jabatan = jabatan.id_jabatan AND jabatan.id_institusi = :id_institusi AND institusi.id_instansi = instansi.id_instansi AND institusi.id_institusi=:id_institusi";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_institusi", $id_institusi);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("nama" => $row['nama'], "account" => $row['account'], "jabatan" => $row['jabatan']);
+        $i++;
+    }
+    $db = null;
+    echo json_encode($output);
+}
+
 function getKodeHals() {
     $db = getDB();
     $query = "SELECT surat_kode_hal.* FROM surat_kode_hal";
@@ -771,12 +796,12 @@ function getInstansi() {
 
 function getInstitusi() {
     $db = getDB();
-    $query = "SELECT * FROM institusi WHERE id_instansi !='000' and nama_institusi!='kosong' order by nama_institusi ASC";
+    $query = "SELECT institusi.*, instansi.nama_instansi FROM institusi, instansi WHERE institusi.id_instansi !='000' and nama_institusi!='kosong' and institusi.id_instansi = instansi.id_instansi order by nama_institusi ASC";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $i = 0;
     while ($row = $stmt->fetch()) {
-        $output[$i] = array("id_institusi" => $row['id_institusi'], "nama_institusi" => $row['nama_institusi'], "id_instansi" => $row['id_instansi']);
+        $output[$i] = array("id_institusi" => $row['id_institusi'], "nama_institusi" => $row['nama_institusi'], "id_instansi" => $row['id_instansi'], "nama_instansi" => $row['nama_instansi']);
         $i++;
     }
     $db = null;
@@ -1017,8 +1042,16 @@ function addUserOp() {
                         $NamaNew = "UPDATE users SET account=:accountNew WHERE account = '" . $paramAccount . "'";
                         $NamaNew2 = $db->prepare($NamaNew);
                         $NamaNew2->bindValue(":accountNew", $namaNew2);
-                        $NamaNew2->execute();
-                        echo '{"result": "Sukses Buat Account Operator", "data": {"account": "' . $namaNew2 . '", "password": "' . $paramPassword . '", "nama_institusi": "' . $paramNamaInstitusi . '"}}';
+                        if ($NamaNew2->execute()) {
+                            $addJabatan = "INSERT INTO pejabat (account, id_jabatan) VALUES (:account, :id_jabatan)";
+                            $execute = $db->prepare($addJabatan);
+                            $execute->bindValue(":account", $namaNew2);
+                            $execute->bindValue(":id_jabatan", $tiga);
+                            $execute->execute();
+                            echo '{"result": "Sukses Buat Account Operator", "data": {"account": "' . $namaNew2 . '", "password": "' . $paramPassword . '", "nama_institusi": "' . $paramNamaInstitusi . '"}}';
+                        } else {
+                            '{"result": "Gagal tambah Jabatan"}';
+                        }
                     } else {
                         echo '{"result": "Gagal Buat Account Operator"}';
                     }
