@@ -70,6 +70,7 @@ $app->delete('/delete', function () {
 });
 
 $app->get('/checkUserOp', 'checkUserOp'); //testing only
+$app->get('/checkPejabat', 'checkPejabat'); //testing only
 $app->get('/users', 'getAllUsers');
 $app->get('/users2', 'getAllUsersOP');
 $app->get('/users3', 'getAllUsersBiasa');
@@ -113,6 +114,7 @@ $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
 $app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
+$app->delete('/hapusPejabat/:token/:account', 'hapusPejabat');
 $app->delete('/hapusUserBiasa/:token/:account', 'hapusUserBiasa');
 $app->delete('/hapusJabatan/:token/:jabatan', 'hapusJabatan');
 $app->delete('/hapusInstansi/:token/:instansi', 'hapusInstansi');
@@ -211,6 +213,38 @@ function hapusJabatan($token, $jabatan) {
         $stmt->bindValue(":jabatan", $jabatan);
         $stmt->execute();
         echo '{"result": "Berhasil Hapus Jabatan"}';
+    } else {
+        echo '{"result": "Bukan Hak Nya"}';
+    }
+}
+
+function hapusPejabat($token, $account) {
+
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $jenis_user = $decode->jenis_user;
+    $id_institusi = $decode->id_institusi;
+
+    if ($jenis_user == '2') {
+//        echo $account;
+//        echo $id_institusi;
+        $query = "DELETE from pejabat WHERE account=:account";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":account", $account);
+        if ($stmt->execute()) {
+            $query2 = "UPDATE `users` SET id_institusi=:institusi, id_jabatan=:id_jabatan, jenis_user=:jenis_user WHERE account=:account";
+            $stmt2 = $db->prepare($query2);
+            $stmt2->bindValue(":institusi", $id_institusi);
+            $stmt2->bindValue(":id_jabatan", '000000000');
+            $stmt2->bindValue(":jenis_user", '4');
+            $stmt2->bindValue(":account", $account);
+            if ($stmt2->execute()) {
+                echo '{"result": "Berhasil Reset Jabatan"}';
+            }
+        } else {
+            echo '{"result": "Gagal Reset Jabatan"}';
+        }
     } else {
         echo '{"result": "Bukan Hak Nya"}';
     }
@@ -385,13 +419,12 @@ function getAllUsersBiasa() {
     }
 }
 
-
-function getJabatanIns($token){
+function getJabatanIns($token) {
     $db = getDB();
 
     $decode = JWT::decode($token, TK);
     $id_institusi = $decode->id_institusi;
-    
+
     $sql = "SELECT * from jabatan WHERE id_institusi = :id_institusi";
     try {
         $db = getDB();
@@ -1232,20 +1265,19 @@ function checkUserJabatan($db) {
     return json_encode($output);
 }
 
+function checkPejabat($db) {
+//    $db = getDB();
 
-function checkPejabat($db){
-    
-    $sql = "SELECT * from pejabat";
+    $sql = "SELECT pejabat.*, jabatan.* from pejabat, jabatan WHERE pejabat.id_jabatan = jabatan.id_jabatan";
     $stmt = $db->prepare($sql);
     $stmt->execute();
     $i = 0;
     while ($row = $stmt->fetch()) {
-        $output[$i] = array("id_pejabat" => $row['id_pejabat'], "account" => $row['account'], "id_jabatan" => $row['id_jabatan']);
+        $output[$i] = array("id_pejabat" => $row['id_pejabat'], "account" => $row['account'], "id_jabatan" => $row['id_jabatan'], "id_institusi" => $row['id_institusi']);
         $i++;
     }
 //    echo '{"result": ' . json_encode($output) . '}';    
     return json_encode($output);
-    
 }
 
 function addInstansi() {
@@ -1453,76 +1485,82 @@ function addKodeUnit() {
     }
 }
 
-function addJabatan(){
-    
+function addJabatan() {
+
     $db = getDB();
     global $app;
     $req = json_decode($app->request()->getBody(), true);
-    
+
     $paramJabatan = $req['jabatan'];
     $token = $req['token'];
-    
+
     $decode = JWT::decode($token, TK);
     $id_institusi = $decode->id_institusi;
-    
-    $id_institusi2 = $id_institusi."000";
+
+    $id_institusi2 = $id_institusi . "000";
     $id_jabatan = increment4($id_institusi2, 1);
-    
+
     $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_jabatan", $id_jabatan);
     $stmt->bindValue(":id_institusi", $id_institusi);
     $stmt->bindValue(":jabatan", $paramJabatan);
-    if($stmt->execute()){
+    if ($stmt->execute()) {
         echo '{"result": "Berhasil Tambah Jabatan"}';
-    }else{
+    } else {
         echo '{"result": "Gagal Tambah Jabatan"}';
     }
-    
 }
 
-function setJabatan(){
-    
+function setJabatan() {
+
     $db = getDB();
     global $app;
     $req = json_decode($app->request()->getBody(), true);
-    
+
     $paramJabatan = $req['jabatan'];
     $paramAccount = $req['account'];
     $token = $req['token'];
-    
-    echo $paramJabatan;
-    echo '-';
-    echo $paramAccount;
-    die();
+
     $decode = JWT::decode($token, TK);
     $id_institusi = $decode->id_institusi;
-    
+
     $checkPejabat = json_decode(checkPejabat($db));
-    
+
     for ($i = 0; $i < count($checkPejabat); $i++) { //pengecekan pejabat yang belum ada 
 //        echo $checkUserOp[$i]->account;
-        if ($paramInstitusi != $checkPejabat[$i]->id_jabatan) {
+        if ($paramJabatan != $checkPejabat[$i]->id_jabatan) {
             $check = 0;
         } else {
             $check = 1;
             break;
         }
     }
-    
-    $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
-    $stmt = $db->prepare($query);
-    $stmt->bindValue(":id_jabatan", $id_jabatan);
-    $stmt->bindValue(":id_institusi", $id_institusi);
-    $stmt->bindValue(":jabatan", $paramJabatan);
-    if($stmt->execute()){
-        echo '{"result": "Berhasil Tambah Jabatan"}';
-    }else{
-        echo '{"result": "Gagal Tambah Jabatan"}';
-    }
-    
-}
 
+    if ($check == 0) {
+        $query = "INSERT INTO pejabat (account, id_jabatan) VALUES (:account, :id_jabatan)";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":account", $paramAccount);
+        $stmt->bindValue(":id_jabatan", $paramJabatan);
+        if ($stmt->execute()) {
+            $query = "UPDATE `users` SET id_institusi=:institusi, id_jabatan=:id_jabatan, jenis_user=:jenis_user WHERE account=:account";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(":institusi", $id_institusi);
+            $stmt->bindValue(":id_jabatan", $paramJabatan);
+            $stmt->bindValue(":jenis_user", '3');
+            $stmt->bindValue(":account", $paramAccount);
+            if ($stmt->execute()) {
+                echo '{"result": "Berhasil Set Jabatan"}';
+            } else {
+                echo '{"result": "Gagal Set Jabatan"}';
+            }
+        } else {
+            echo '{"result": "Gagal Update Jabatan"}';
+        }
+    } else {
+        echo '{"result": "Pejabat Sudah Ada"}';
+    }
+}
 
 function getKodeUnit($db, $id_institusi) {
     $db = getDB();
@@ -1885,7 +1923,7 @@ function tambah02($input, $inc) {
     }
 }
 
-function increment4($input, $inc){
+function increment4($input, $inc) {
     if (strlen(intval($input)) == 7) {
         if (intval($input) != 9) {
             $out = '00';
