@@ -31,7 +31,6 @@ require 'templates/view.php';
 require 'templates/attachments.php';
 require 'templates/sse.php';
 require 'templates/authSurat.php';
-require 'templates/getSurat.php';
 
 include_once 'GCM.php';
 
@@ -112,7 +111,6 @@ $app->post('/addJabatan', 'addJabatan');
 $app->post('/setJabatan', 'setJabatan');
 $app->post('/attachments', 'saveAttachments'); // testing only
 $app->post('/authSurat', 'authSurat');
-$app->post('/surat', 'getSurat');
 $app->put('/accSurat', 'accSurat');
 $app->put('/koreksiSurat', 'koreksiSurat');
 $app->put('/setFavorite', 'setFavorite');
