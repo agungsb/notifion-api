@@ -1280,6 +1280,22 @@ function checkPejabat($db) {
     return json_encode($output);
 }
 
+function checkJabatan($db, $id_institusi) {
+//    $db = getDB();
+
+    $sql = "SELECT jabatan.* from jabatan WHERE id_institusi=:id_institusi";
+    $stmt = $db->prepare($sql);
+    $stmt->bindValue("id_institusi", $id_institusi);
+    $stmt->execute();
+    $i = 0;
+    while ($row = $stmt->fetch()) {
+        $output[$i] = array("id_jabatan" => $row['id_jabatan'], "id_institusi" => $row['id_institusi'], "jabatan" => $row['jabatan']);
+        $i++;
+    }
+//    echo '{"result": ' . json_encode($output) . '}';    
+    return json_encode($output);
+}
+
 function addInstansi() {
     $db = getDB();
     global $app;
@@ -1497,16 +1513,42 @@ function addJabatan() {
     $decode = JWT::decode($token, TK);
     $id_institusi = $decode->id_institusi;
 
-    $id_institusi2 = $id_institusi . "000";
-    $id_jabatan = increment4($id_institusi2, 1);
+//    $id_institusi2 = $id_institusi . "000";
+//    $id_jabatan = increment4($id_institusi2, 1);
 
-    $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
-    $stmt = $db->prepare($query);
-    $stmt->bindValue(":id_jabatan", $id_jabatan);
-    $stmt->bindValue(":id_institusi", $id_institusi);
-    $stmt->bindValue(":jabatan", $paramJabatan);
-    if ($stmt->execute()) {
-        echo '{"result": "Berhasil Tambah Jabatan"}';
+    $checkJabatan = json_decode(checkJabatan($db, $id_institusi));
+
+
+    for ($i = 0; $i < count($checkJabatan); $i++) {
+//        echo $checkUserOp[$i]->account;
+        if ($paramJabatan != $checkJabatan[$i]->jabatan && $id_institusi == $checkJabatan[$i]->id_institusi) {
+            $check = 0;
+            $jabatan = $checkJabatan[$i]->id_jabatan;
+        } else {
+            $check = 1;
+            break;
+        }
+    }
+    
+    $id_jabatan_new = increment4($jabatan, 1);
+    
+//    echo $id_jabatan_new;
+//    die();
+//    echo $check;
+//    echo '-';
+//    echo $jabatan;
+//    die();
+    if ($check == 0) {
+        $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(":id_jabatan", $id_jabatan_new);
+        $stmt->bindValue(":id_institusi", $id_institusi);
+        $stmt->bindValue(":jabatan", $paramJabatan);
+        if ($stmt->execute()) {
+            echo '{"result": "Berhasil Tambah Jabatan"}';
+        } else {
+            echo '{"result": "Gagal Update Tabel Jabatan"}';
+        }
     } else {
         echo '{"result": "Gagal Tambah Jabatan"}';
     }
