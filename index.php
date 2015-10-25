@@ -30,6 +30,8 @@ require 'templates/preview2.php';
 require 'templates/view.php';
 require 'templates/attachments.php';
 require 'templates/sse.php';
+require 'templates/authSurat.php';
+require 'templates/getSurat.php';
 
 include_once 'GCM.php';
 
@@ -75,6 +77,7 @@ $app->get('/users', 'getAllUsers');
 $app->get('/users2', 'getAllUsersOP');
 $app->get('/users3', 'getAllUsersBiasa');
 $app->get('/tujuan', 'getTujuan');
+$app->get('/specificUserInfo/:account', 'getSpecificUserInfo');
 $app->get('/jabatansIns/:token', 'getJabatanIns');
 $app->get('/penandatangan/:token', 'getPenandatangan');
 $app->get('/user/:token', 'getUser');
@@ -108,6 +111,8 @@ $app->post('/addKodeUnit', 'addKodeUnit');
 $app->post('/addJabatan', 'addJabatan');
 $app->post('/setJabatan', 'setJabatan');
 $app->post('/attachments', 'saveAttachments'); // testing only
+$app->post('/authSurat', 'authSurat');
+$app->post('/surat', 'getSurat');
 $app->put('/accSurat', 'accSurat');
 $app->put('/koreksiSurat', 'koreksiSurat');
 $app->put('/setFavorite', 'setFavorite');
@@ -490,6 +495,42 @@ function getPenandatangan($token) {
     }
 }
 
+function checkJabatanIsExist($db, $id_jabatan) {
+    $query = "SELECT * FROM jabatan WHERE id_jabatan = :id_jabatan";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(':id_jabatan', $id_jabatan);
+    try {
+        $stmt->execute();
+    } catch (Exception $ex) {
+        die($ex->getMessage());
+    }
+    return $stmt->rowCount();
+}
+
+function getSpecificUserInfo($account) {
+    $db = getDB();
+    $check = checkJabatanIsExist($db, $account);
+
+    $query = "SELECT jabatan.*, institusi.nama_institusi, users.* FROM jabatan, institusi, users";
+    if ($check > 0) { // Pejabat
+        $query .= " WHERE users.id_jabatan = :account AND jabatan.id_jabatan = users.id_jabatan";
+    } else { // Karyawan
+        $query .= " WHERE users.account = :account";
+    }
+//    die($query);
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":account", $account);
+    try {
+        $stmt->execute();
+        $row = $stmt->fetch();
+        $output = array("name" => ($row['jabatan'] == 'None') ? $row['nama'] : $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => ($row['nama_institusi'] == 'None') ? "Dosen/Karyawan" : $row['nama_institusi'], "nip" => $row['nip'], "image" => 'http://' . $_SERVER['SERVER_NAME'] . '/images/user-male.png'); //http://localhost/notifion-api/images/user-male.png
+        $db = null;
+        echo '{"result": ' . json_encode($output) . '}';
+    } catch (PDOException $e) {
+        echo "{'error':{text':'" . $e->getMessage() . "'}}";
+    }
+}
+
 function getAllSurats($token, $offset, $limit) {
     $db = getDB();
     $decode = JWT::decode($token, TK);
@@ -497,9 +538,9 @@ function getAllSurats($token, $offset, $limit) {
     $id_jabatan = $decode->id_jabatan;
 
 //    if ($jabatan->status) {
-    $query = "SELECT surat.*, surat_terdistribusi.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat_terdistribusi`, `surat`, `institusi`, `surat_kode_hal` WHERE (surat_terdistribusi.penerima=:account or surat_terdistribusi.penerima=:idJabatan) AND surat_terdistribusi.id_surat = surat.id_surat AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.ditandatangani = '1' AND surat_kode_hal.kode_hal = surat.kode_hal ORDER BY surat.tanggal_surat DESC LIMIT :limit OFFSET :offset";
+    $query = "SELECT surat.*, surat_terdistribusi.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat_terdistribusi`, `surat`, `institusi`, `surat_kode_hal` WHERE (surat_terdistribusi.penerima = :account or surat_terdistribusi.penerima = :idJabatan) AND surat_terdistribusi.id_surat = surat.id_surat AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.ditandatangani = '1' AND surat_kode_hal.kode_hal = surat.kode_hal ORDER BY surat.tanggal_surat DESC LIMIT :limit OFFSET :offset";
 //    } else {
-//        $query = "SELECT surat.*, surat_terdistribusi.*, operator.*, institusi.* FROM `surat_terdistribusi`, `surat`, `operator`, `institusi` WHERE surat_terdistribusi.penerima=:account AND surat_terdistribusi.id_surat = surat.id_surat AND surat.id_operator = operator.id_operator AND operator.id_institusi = institusi.id_institusi ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
+//        $query = "SELECT surat.*, surat_terdistribusi.*, operator.*, institusi.* FROM `surat_terdistribusi`, `surat`, `operator`, `institusi` WHERE surat_terdistribusi.penerima = :account AND surat_terdistribusi.id_surat = surat.id_surat AND surat.id_operator = operator.id_operator AND operator.id_institusi = institusi.id_institusi ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
 //    }
     $stmt = $db->prepare($query);
     $stmt->bindValue(":account", $account);
@@ -533,7 +574,7 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     $account = $decode->account;
     $id_jabatan = $decode->id_jabatan;
 
-    $query = "SELECT surat.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan=:account or surat.penandatangan=:idJabatan) AND surat.ditandatangani !='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
+    $query = "SELECT surat.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan = :account or surat.penandatangan = :idJabatan) AND surat.ditandatangani !='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
 
     $stmt = $db->prepare($query);
     $stmt->bindValue(":account", $account);
@@ -619,7 +660,7 @@ function getAllSuratsDraft($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi']);
+            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi'], "no_surat" => $row['no_surat']);
             $i++;
         }
     } else {
@@ -802,7 +843,7 @@ function getUser($token) {
         $stmt->execute();
         $row = $stmt->fetch();
         $db = null;
-        $output = '"result": "success", "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "data": ' . json_encode($row);
+        $output = '"result": "Success", "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "data": ' . json_encode($row);
         if ($row['jenis_user'] == '2') {
             $output .= ', "isCorrected": ' . countCorrected($row['id_institusi']);
         }
@@ -1529,9 +1570,9 @@ function addJabatan() {
             break;
         }
     }
-    
+
     $id_jabatan_new = increment4($jabatan, 1);
-    
+
 //    echo $check;
 //    echo '-';
 //    echo $id_jabatan_new;
