@@ -473,7 +473,7 @@ function getPenandatangan($token) {
 
     try {
         $db = getDB();
-        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan";
+        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama, jenis_user FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan AND jenis_user !=2 ";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->execute();
@@ -1532,11 +1532,9 @@ function addJabatan() {
     
     $id_jabatan_new = increment4($jabatan, 1);
     
-//    echo $id_jabatan_new;
-//    die();
 //    echo $check;
 //    echo '-';
-//    echo $jabatan;
+//    echo $id_jabatan_new;
 //    die();
     if ($check == 0) {
         $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";

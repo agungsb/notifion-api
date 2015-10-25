@@ -121,7 +121,7 @@ function viewSurat($id, $token) {
         $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
         for ($i = 0; $i < count($tembusan); $i++) {
             if ($tembusan[$i] != '') {
-                $pdf->MultiCell(170, 0, getJabatan($dbh, $tembusan[$i]), 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+                $pdf->MultiCell(170, 0,  $tembusan[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
             }
         }
     }

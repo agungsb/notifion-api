@@ -19,7 +19,7 @@ function previewSurat() {
 
     $dbh = getDB();
 
-    $query = "SELECT surat.*, surat_kode_hal.deskripsi, users.nama, jabatan.jabatan from surat, surat_kode_hal, users, jabatan WHERE surat.id_surat=:id_surat AND (surat.penandatangan = :id_jabatan OR surat.penandatangan = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat.penandatangan = users.account) OR (surat.penandatangan = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
+    $query = "SELECT surat.*, surat_kode_hal.deskripsi, users.nama, users.nip, jabatan.jabatan from surat, surat_kode_hal, users, jabatan WHERE surat.id_surat=:id_surat AND (surat.penandatangan = :id_jabatan OR surat.penandatangan = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat.penandatangan = users.account) OR (surat.penandatangan = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
 
     $stmt = $dbh->prepare($query);
     $stmt->bindValue(':id_surat', (int) $id, PDO::PARAM_INT);
@@ -33,9 +33,16 @@ function previewSurat() {
         $hal = $row['subject_surat']; // Mendapatkan deskripsi dari HAL
         $input = $row['isi']; // Mendapatkan isi dari surat
         $tjb = $row['jabatan'];
-        $lam = $row['lampiran'];
+        $lam2 = $row['lampiran'];
+        
+        if($lam2 == 0){
+            $lam = '-';
+        }  else {
+            $lam = $row['lampiran'];
+        }
         $nama_pejabat = $row['nama'];
         $nosurat = $row['no_surat'];
+        $nip = $row['nip'];
         $tanggal = convertDate($row['tanggal_surat']);
 
         // Cari nama user berdasarkan jabatan parameter 'tujuan' //
@@ -112,7 +119,7 @@ function previewSurat() {
         $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
         for ($i = 0; $i < count($tembusan); $i++) {
             if ($tembusan[$i] != '') {
-                $pdf->MultiCell(170, 0, getJabatan($dbh, $tembusan[$i]), 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+                $pdf->MultiCell(170, 0, $tembusan[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
             }
         }
     }

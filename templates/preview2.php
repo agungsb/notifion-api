@@ -13,20 +13,26 @@ function preview2() {
     $paramToken = $req['token'];
 
     $decode = JWT::decode($paramToken, TK);
-    
+
     $id_institusi = $decode->id_institusi;
 
     $paramSubject = $req['subject']; // Getting parameter with names
     $paramTanggalSurat = $req['tanggal_surat']; // Getting parameter with names
 //    $paramNoSurat = $req['nosurat'];
-    $paramLampiran = $req['lampiran'];
+    $paramLampiran2 = $req['lampiran'];
+        
+        if($paramLampiran2 == 0){
+            $paramLampiran = '-';
+        }  else {
+            $paramLampiran = $req['lampiran'];
+        }
     $paramHal = $req['subject'];
     $paramTujuan = $req['tujuan'];
     $paramPenandatangan = $req['penandatangan'];
     $paramTembusan = $req['tembusan'];
-    $paramIsiSurat = $req['isi'];
-    
-    $paramNoSurat = checkCounter($db, $id_institusi, true) . "/UN39." . getKodeUnit($db, $id_institusi). "/".$req['hal'] ."/".  date('y');
+    $paramIsiSurat = $req['isi'];   
+
+    $paramNoSurat = checkCounter($db, $id_institusi, true) . "/UN39." . getKodeUnit($db, $id_institusi) . "/" . $req['hal'] . "/" . date('y');
 
     $timezone_identifier = "Asia/Jakarta";
     date_default_timezone_set($timezone_identifier);
@@ -66,7 +72,6 @@ function preview2() {
         }
     }
     $pdf->MultiCell(90, 17, 'Universitas Negeri Jakarta', 0, 'L', 0, 1, 33, '', true, 0, false, true, 0, 'T', true); //90 = panjang cell 6 lebar cell
-
 //third
 //    $input = str_replace("&lt;br/&gt;", "\\nbbb", $paramIsiSurat);
 //    $paramIsiSurat = "<p><span style=\"color\: rgba(0, 0, 0, 0.870588)\;float\: none\;background\-color: rgb(255\, 255\,
@@ -83,15 +88,14 @@ function preview2() {
     $pdf->setCellMargins(0, 23, 0, 0);
     $pdf->MultiCell(170, 0, '' . $paramPenandatangan[0]['nama'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
     $pdf->setCellMargins(0, 0, 0, 0);
-    $pdf->MultiCell(170, 0, 'NIP' . $paramPenandatangan[0]['nip'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
+    $pdf->MultiCell(170, 0, 'NIP.' . $paramPenandatangan[0]['nip'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
 
 //Tembusan
-    $pdf->setCellMargins(0, 10, 0, 0);
-    $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
-
+    $pdf->setCellMargins(0, 7, 0, 0);
     $pdf->setCellMargins(0, 0, 0, 0);
     for ($i = 0; $i < count($paramTembusan); $i++) {
         if ($paramTembusan[$i] != '') {
+            $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
             $pdf->MultiCell(170, 0, ($i + 1) . '. ' . $paramTembusan[$i]['name'], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
         }
     }
