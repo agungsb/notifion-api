@@ -1,6 +1,6 @@
 <?php
 
-function preview2() {
+function previewKoreksi() {
     global $app;
     $db = getDB();
 
@@ -37,7 +37,7 @@ function preview2() {
     $timezone_identifier = "Asia/Jakarta";
     date_default_timezone_set($timezone_identifier);
     $tanggal_surat = convertDate(date('Y-m-d', strtotime($paramTanggalSurat)));
-    $db = null;
+//    $db = null;
 
 // add a page
 
@@ -86,7 +86,8 @@ function preview2() {
     $pdf->setCellMargins(0, 7, 0, 0);
     $pdf->MultiCell(170, 0, '' . $paramPenandatangan[0]['name'] . '', 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true); //nanti diganti
     $pdf->setCellMargins(0, 23, 0, 0);
-    $pdf->MultiCell(170, 0, '' . $paramPenandatangan[0]['nama'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
+    $getNama = getAccountName($db, $paramPenandatangan[0]['identifier']);
+    $pdf->MultiCell(170, 0, '' . $getNama['nama'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
     $pdf->setCellMargins(0, 0, 0, 0);
     $pdf->MultiCell(170, 0, 'NIP.' . $paramPenandatangan[0]['nip'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
 

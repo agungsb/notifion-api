@@ -164,6 +164,19 @@ function getAccountName($dbh, $params) {
     return $row;
 }
 
+function isPejabat($dbh, $params){
+    $query = "SELECT jabatan.jabatan, institusi.nama_institusi FROM users, jabatan, institusi WHERE (users.account='" . $params . "' OR users.id_jabatan='" . $params . "') AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
+    $stmt = $dbh->prepare($query);
+    $stmt->execute();
+    $row = $stmt->fetch();
+    if($stmt->rowCount() > 0){
+        $result = true;
+    }else{
+        $result = false;
+    }
+    return $result;
+}
+
 function getJabatan($dbh, $params) {
     $query = "SELECT jabatan.jabatan, institusi.nama_institusi FROM users, jabatan, institusi WHERE (users.account='" . $params . "' OR users.id_jabatan='" . $params . "') AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
     $stmt = $dbh->prepare($query);

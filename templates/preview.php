@@ -34,10 +34,10 @@ function previewSurat() {
         $input = $row['isi']; // Mendapatkan isi dari surat
         $tjb = $row['jabatan'];
         $lam2 = $row['lampiran'];
-        
-        if($lam2 == 0){
+
+        if ($lam2 == 0) {
             $lam = '-';
-        }  else {
+        } else {
             $lam = $row['lampiran'];
         }
         $nama_pejabat = $row['nama'];
@@ -52,17 +52,20 @@ function previewSurat() {
         if ($row['tembusan'] != '') {
             $tembusan = explode("@+id/", $row['tembusan']);
         }
-        $stmt2->bindValue(":tujuan", $tujuan[0]);
-        try {
-            $stmt2->execute();
-            if ($stmt2->rowCount() > 0) { // Jika ditemukan
-                $row2 = $stmt2->fetch();
-                $tujuan2 = $row2['nama'];
-            } else { // Jika tidak ditemukan, berarti suratnya ditujukan kepada pejabat. Cari di tabel pejabat
-                $tujuan2 = getJabatan($dbh, $tujuan[0]);
+        $tujuan2 = array();
+        for ($i = 0; $i < count($tujuan); $i++) {
+            $stmt2->bindValue(":tujuan", $tujuan[$i]);
+            try {
+                $stmt2->execute();
+                if ($stmt2->rowCount() > 0) { // Jika ditemukan
+                    $row2 = $stmt2->fetch();
+                    array_push($tujuan2, $row2['nama']);
+                } else { // Jika tidak ditemukan, berarti suratnya ditujukan kepada pejabat. Cari di tabel pejabat
+                    array_push($tujuan2, getJabatan($dbh, $row['jabatan']));
+                }
+            } catch (PDOException $ex) {
+                echo $ex->getMessage();
             }
-        } catch (PDOException $ex) {
-            echo $ex->getMessage();
         }
     } catch (PDOException $e) {
         echo $e->getMessage();
@@ -94,12 +97,16 @@ function previewSurat() {
 
 //second
     $pdf->MultiCell(0, 0, 'Yth.', 0, 'L', 0, 0, 25, 88, true, 0, false, true, 0, 'M', true);
-    $pdf->MultiCell(90, 6, '' . $tujuan2 . '', 0, 'L', 0, 0, 33, 88, true, 0, false, true, 0, 'M', true);
-    $pdf->MultiCell(90, 6, 'Universitas Negeri Jakarta', 0, 'L', 0, 0, 33, 93, true, 0, false, true, 0, 'M', true);
+    for ($i = 0; $i < count($tujuan2); $i++) {
+//        $pdf->MultiCell(170, 0, $tembusan[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+        $pdf->MultiCell(170, 0, $tujuan2[$i], 0, 'J', 0, 1, 33, '', true, 0, true, true, 0, 'T', true);
+    }
+    $pdf->MultiCell(90, 6, 'Universitas Negeri Jakarta', 0, 'L', 0, 1, 33, '', true, 0, false, true, 0, 'T', true);
 
 //third
 //$input = str_replace('<br />', '\n', $_POST['isi']);
 
+    $pdf->setCellMargins(0, 7, 0, 0); //jarak paragraf
     $html = $input;
     $pdf->MultiCell(170, 0, '' . $input . '' . "\n", 0, 'J', 0, 1, 25, 105, true, 0, true, true, 0, 'T', true); //nilai 1 setelah J adalah posisi cell default berada dibawah
 //$pdf->MultiCell($w, $h, $txt, $border, $align, $fill, $ln, $x, $y, $reseth, $stretch, $ishtml, $autopadding, $maxh);
@@ -118,8 +125,9 @@ function previewSurat() {
     } else {
         $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
         for ($i = 0; $i < count($tembusan); $i++) {
+            $getNama = getAccountName($dbh, $tembusan[$i]);
             if ($tembusan[$i] != '') {
-                $pdf->MultiCell(170, 0, $tembusan[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+                $pdf->MultiCell(170, 0, $getNama['nama'], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
             }
         }
     }

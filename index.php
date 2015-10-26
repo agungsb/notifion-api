@@ -28,6 +28,7 @@ require 'templates/submitEdit.php';
 require 'templates/home.php';
 require 'templates/preview.php';
 require 'templates/preview2.php';
+require 'templates/previewKoreksi.php';
 require 'templates/view.php';
 require 'templates/attachments.php';
 require 'templates/sse.php';
@@ -102,6 +103,7 @@ $app->post('/registerGCMUser', 'registerGCMUser');
 $app->post('/unregisterGCMUser', 'unregisterGCMUser');
 $app->post('/submitSurat', 'submitSurat');
 $app->post('/submitEdit', 'submitEdit');
+$app->post('/previewKoreksi', 'previewKoreksi');
 $app->post('/editBio', 'editBio');
 $app->post('/addUser', 'addUser');
 $app->post('/addUserOp', 'addUserOp');
@@ -523,7 +525,8 @@ function getSpecificUserInfo($account) {
     try {
         $stmt->execute();
         $row = $stmt->fetch();
-        $output = array("name" => ($row['jabatan'] == 'None') ? $row['nama'] : $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => ($row['nama_institusi'] == 'None') ? "Dosen/Karyawan" : $row['nama_institusi'], "nip" => $row['nip'], "image" => 'http://' . $_SERVER['SERVER_NAME'] . '/images/user-male.png'); //http://localhost/notifion-api/images/user-male.png
+        $getNama = getAccountName($db, $account);
+        $output = array("name" => ($row['jabatan'] == 'None') ? $row['nama'] : $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => ($row['nama_institusi'] == 'None') ? "Dosen/Karyawan" : $row['nama_institusi'], "nip" => $row['nip'], "nama" =>  $getNama['nama'], "image" => 'http://' . $_SERVER['SERVER_NAME'] . '/images/user-male.png'); //http://localhost/notifion-api/images/user-male.png
         $db = null;
         echo '{"result": ' . json_encode($output) . '}';
     } catch (PDOException $e) {
@@ -626,7 +629,7 @@ function getLampiranFilePath($no_surat) {
 
     $db = getDB();
 
-    $query = "SELECT surat_lampiran.file_path FROM `surat`, `surat_lampiran` WHERE surat.no_surat = :no_surat AND surat.no_surat = surat_lampiran.no_surat";
+    $query = "SELECT surat_lampiran.file_path, surat_lampiran.id_lampiran FROM `surat`, `surat_lampiran` WHERE surat.no_surat = :no_surat AND surat.no_surat = surat_lampiran.no_surat";
 
     $stmt = $db->prepare($query);
     $stmt->bindValue(":no_surat", $no_surat);
@@ -634,7 +637,7 @@ function getLampiranFilePath($no_surat) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $lampirans[$i] = array("file_path" => $row['file_path']);
+            $lampirans[$i] = array("id_lampiran" => $row['id_lampiran'], "file_path" => $row['file_path']);
             $i++;
         }
     } else {
@@ -749,7 +752,7 @@ function listTembusan($dbh, $string) {
         $tempArr = array();
         for ($i = 0; $i < count($arr); $i++) {
             if (!empty($arr[$i])) {
-                array_push($tempArr, getJabatan($dbh, $arr[$i]));
+                array_push($tempArr, identifyTembusan($dbh, $arr[$i]));
             }
         }
         $join = implode(", ", $tempArr);
@@ -758,6 +761,27 @@ function listTembusan($dbh, $string) {
     }
     return $join;
 }
+
+function identifyTembusan($dbh, $params) {
+    $result = "";
+    $query = "SELECT users.nama FROM users WHERE users.account=:params";
+    $stmt = $dbh->prepare($query);
+    $stmt->bindValue(':params', $params);
+    $stmt->execute();
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch();
+        $result = $row['nama'];
+    } else {
+        $query2 = "SELECT jabatan.jabatan FROM jabatan, institusi, users WHERE users.id_jabatan=:params AND users.id_jabatan = jabatan.id_jabatan AND jabatan.id_institusi = institusi.id_institusi";
+        $stmt2 = $dbh->prepare($query2);
+        $stmt2->bindValue(':params', $params);
+        $stmt2->execute();
+        $row2 = $stmt2->fetch();
+        $result = $row2['jabatan'];
+    }
+    return $result;
+}
+
 
 function countFavorites($token = '', $account = '', $id_jabatan = '') {
     $db = getDB();
