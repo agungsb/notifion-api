@@ -660,7 +660,7 @@ function getAllSuratsDraft($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi'], "no_surat" => $row['no_surat']);
+            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi'], "no_surat" => $row['no_surat'], "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
     } else {
