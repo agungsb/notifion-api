@@ -448,7 +448,7 @@ function getJabatanIns($token) {
 }
 
 function getTujuan() {
-    $sql = "SELECT users.* FROM users WHERE jenis_user != 1";
+    $sql = "SELECT users.* FROM users WHERE jenis_user = '3'";
     try {
         $db = getDB();
         $stmt = $db->prepare($sql);
