@@ -6,7 +6,7 @@ function viewSurat($id, $token) {
     $app->response->headers->set("Content-Type", "application/pdf");
 //include header
     include 'headerpdf.php';
-    
+
     $req = json_decode($app->request->getBody(), true);
 
 //    $token = $req['token']; Jika menggunakan method POST
@@ -18,7 +18,7 @@ function viewSurat($id, $token) {
     $id_jabatan = $decode->id_jabatan;
 
     $dbh = getDB();
-    
+
 //    setReads($dbh, $id);
 
     $query = "SELECT surat.*, surat_terdistribusi.penerima, surat_kode_hal.deskripsi, users.nama, jabatan.jabatan from surat, surat_terdistribusi, surat_kode_hal, users, jabatan WHERE surat_terdistribusi.id=:id_surat AND surat_terdistribusi.id_surat = surat.id_surat AND (surat_terdistribusi.penerima = :id_jabatan OR surat_terdistribusi.penerima = :account) AND surat.kode_hal = surat_kode_hal.kode_hal AND ((surat_terdistribusi.penerima = users.account) OR (surat_terdistribusi.penerima = users.id_jabatan AND users.id_jabatan = jabatan.id_jabatan))";
@@ -33,7 +33,7 @@ function viewSurat($id, $token) {
 
         $row = $stmt->fetch();
 
-        $hal = $row['deskripsi']; // Mendapatkan deskripsi dari HAL
+        $hal = $row['subject_surat']; // Subject Surat
         $input = $row['isi']; // Mendapatkan isi dari surat
 //        $tjb = $row['jabatan'];
 //        $nama_pejabat = $row['nama'];
@@ -42,7 +42,7 @@ function viewSurat($id, $token) {
         $tanggal = convertDate($row['tanggal_surat']);
 
         $tjb = getJabatan($dbh, $row['penandatangan']);
-        
+
         $test = getAccountName($dbh, $row['penandatangan']);
         $nama_pejabat = $test['nama'];
         $nip = $test['nip'];
@@ -52,7 +52,7 @@ function viewSurat($id, $token) {
         }
 
         // Cari nama user berdasarkan jabatan parameter 'tujuan' //
-        $query2 = "SELECT users.nama FROM users WHERE users.id_jabatan = :tujuan OR users.account = :tujuan";
+        $query2 = "SELECT users.nama FROM users WHERE users.account = :tujuan";
         $stmt2 = $dbh->prepare($query2);
         $stmt2->bindValue(":tujuan", $row['penerima']);
         try {
@@ -66,6 +66,37 @@ function viewSurat($id, $token) {
         } catch (PDOException $ex) {
             echo $ex->getMessage();
         }
+        
+        
+        $queryTembusan = "SELECT users.id_jabatan FROM users WHERE users.id_jabatan = :tembusan";
+        $stmtTembusan = $dbh->prepare($queryTembusan);
+        
+        $tembusan2 = array();
+        for ($i = 0; $i < count($tembusan); $i++) {
+            $stmtTembusan->bindValue(":tembusan", $tembusan[$i]);
+            $temp2 = $tembusan[$i];
+            try {
+                $stmtTembusan->execute();
+                if ($stmtTembusan->rowCount() > 0) { // Jika ditemukan
+                    $rowTembusan = $stmtTembusan->fetch();
+                    array_push($tembusan2, getJabatan($dbh, $rowTembusan['id_jabatan']));
+                } else { // Jika tidak ditemukan, berarti suratnya ditujukan kepada pejabat. Cari di tabel pejabat
+                    $queryTembusanNama = "SELECT users.nama FROM users WHERE users.account = :tembusan";
+                    $stmtTembusanNama = $dbh->prepare($queryTembusanNama);
+                    $stmtTembusanNama->bindParam(":tembusan", $temp2);
+//                    echo $temp;
+//                    die();
+                    $stmtTembusanNama->execute();
+                    if ($stmtTembusanNama->rowCount() > 0) {
+                        $rowTembusanNama = $stmtTembusanNama->fetch();
+                        array_push($tembusan2, $rowTembusanNama['nama']);
+                    }
+                }
+            } catch (PDOException $ex) {
+                echo $ex->getMessage();
+            }
+        }
+        
     } catch (PDOException $e) {
         echo $e->getMessage();
     }
@@ -102,7 +133,6 @@ function viewSurat($id, $token) {
 //third
 //$input = str_replace('<br />', '\n', $_POST['isi']);
 
-    $html = $input;
     $pdf->MultiCell(170, 0, '' . $input . '' . "\n", 0, 'J', 0, 1, 25, 105, true, 0, true, true, 0, 'T', true); //nilai 1 setelah J adalah posisi cell default berada dibawah
 //$pdf->MultiCell($w, $h, $txt, $border, $align, $fill, $ln, $x, $y, $reseth, $stretch, $ishtml, $autopadding, $maxh);
 ////$pdf->writeHTML($html);
@@ -120,8 +150,8 @@ function viewSurat($id, $token) {
     } else {
         $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
         for ($i = 0; $i < count($tembusan); $i++) {
-            if ($tembusan[$i] != '') {
-                $pdf->MultiCell(170, 0,  $tembusan[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+            if ($tembusan2[$i] != '') {
+                $pdf->MultiCell(170, 0, $tembusan2[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
             }
         }
     }
@@ -164,20 +194,21 @@ function getAccountName($dbh, $params) {
     return $row;
 }
 
-function isPejabat($dbh, $params){
+function isPejabat($dbh, $params) {
     $query = "SELECT jabatan.jabatan, institusi.nama_institusi FROM users, jabatan, institusi WHERE (users.account='" . $params . "' OR users.id_jabatan='" . $params . "') AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
     $stmt = $dbh->prepare($query);
     $stmt->execute();
     $row = $stmt->fetch();
-    if($stmt->rowCount() > 0){
+    if ($stmt->rowCount() > 0) {
         $result = true;
-    }else{
+    } else {
         $result = false;
     }
     return $result;
 }
 
 function getJabatan($dbh, $params) {
+//    $query = "SELECT jabatan.jabatan, institusi.nama_institusi FROM users, jabatan, institusi WHERE (users.account='" . $params . "' OR users.id_jabatan='" . $params . "') AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
     $query = "SELECT jabatan.jabatan, institusi.nama_institusi FROM users, jabatan, institusi WHERE (users.account='" . $params . "' OR users.id_jabatan='" . $params . "') AND users.id_jabatan=jabatan.id_jabatan AND jabatan.id_institusi=institusi.id_institusi";
     $stmt = $dbh->prepare($query);
     $stmt->execute();

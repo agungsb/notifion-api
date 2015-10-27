@@ -1,6 +1,6 @@
 <?php
 
-function preview2() {
+function previewBuat() {
     global $app;
     $db = getDB();
 

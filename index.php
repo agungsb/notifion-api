@@ -27,7 +27,7 @@ require 'templates/submitSurat.php';
 require 'templates/submitEdit.php';
 require 'templates/home.php';
 require 'templates/preview.php';
-require 'templates/preview2.php';
+require 'templates/previewBuat.php';
 require 'templates/previewKoreksi.php';
 require 'templates/view.php';
 require 'templates/attachments.php';
@@ -96,7 +96,7 @@ $app->get('/checkUserJabatan', 'checkUserJabatan'); // testing only
 $app->get('/institusi', 'getInstitusi');
 $app->get('/sse/:id', 'getSse');
 $app->post('/preview', 'previewSurat');
-$app->post('/preview2', 'preview2');
+$app->post('/previewBuat', 'previewBuat');
 $app->get('/view/:id/:token', 'viewSurat');
 $app->post('/login', 'authLogin');
 $app->post('/registerGCMUser', 'registerGCMUser');

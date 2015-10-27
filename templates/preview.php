@@ -46,27 +46,70 @@ function previewSurat() {
         $tanggal = convertDate($row['tanggal_surat']);
 
         // Cari nama user berdasarkan jabatan parameter 'tujuan' //
-        $query2 = "SELECT users.nama FROM users WHERE users.id_jabatan = :tujuan OR users.account = :tujuan";
-        $stmt2 = $dbh->prepare($query2);
+        $queryTujuan = "SELECT users.id_jabatan FROM users WHERE users.id_jabatan = :tujuan";
+        $queryTembusan = "SELECT users.id_jabatan FROM users WHERE users.id_jabatan = :tembusan";
+        $stmtTujuan = $dbh->prepare($queryTujuan);
+        $stmtTembusan = $dbh->prepare($queryTembusan);
+        
         $tujuan = explode("@+id/", $row['tujuan']);
         if ($row['tembusan'] != '') {
             $tembusan = explode("@+id/", $row['tembusan']);
         }
+        
         $tujuan2 = array();
+        $tembusan2 = array();
+        
         for ($i = 0; $i < count($tujuan); $i++) {
-            $stmt2->bindValue(":tujuan", $tujuan[$i]);
+            $stmtTujuan->bindValue(":tujuan", $tujuan[$i]);
+            $temp = $tujuan[$i];
             try {
-                $stmt2->execute();
-                if ($stmt2->rowCount() > 0) { // Jika ditemukan
-                    $row2 = $stmt2->fetch();
-                    array_push($tujuan2, $row2['nama']);
+                $stmtTujuan->execute();
+                if ($stmtTujuan->rowCount() > 0) { // Jika ditemukan
+                    $row2 = $stmtTujuan->fetch();
+                    array_push($tujuan2, getJabatan($dbh, $row2['id_jabatan']));
                 } else { // Jika tidak ditemukan, berarti suratnya ditujukan kepada pejabat. Cari di tabel pejabat
-                    array_push($tujuan2, getJabatan($dbh, $row['jabatan']));
+                    $query3 = "SELECT users.nama FROM users WHERE users.account = :tujuan";
+                    $stmt3 = $dbh->prepare($query3);
+                    $stmt3->bindParam(":tujuan", $temp);
+//                    echo $temp;
+//                    die();
+                    $stmt3->execute();
+                    if ($stmt3->rowCount() > 0) {
+                        $row3 = $stmt3->fetch();
+                        array_push($tujuan2, $row3['nama']);
+                    }
                 }
             } catch (PDOException $ex) {
                 echo $ex->getMessage();
             }
         }
+        
+        for ($i = 0; $i < count($tembusan); $i++) {
+            $stmtTembusan->bindValue(":tembusan", $tembusan[$i]);
+            $temp2 = $tembusan[$i];
+            try {
+                $stmtTembusan->execute();
+                if ($stmtTembusan->rowCount() > 0) { // Jika ditemukan
+                    $rowTembusan = $stmtTembusan->fetch();
+                    array_push($tembusan2, getJabatan($dbh, $rowTembusan['id_jabatan']));
+                } else { // Jika tidak ditemukan, berarti suratnya ditujukan kepada pejabat. Cari di tabel pejabat
+                    $queryTembusanNama = "SELECT users.nama FROM users WHERE users.account = :tembusan";
+                    $stmtTembusanNama = $dbh->prepare($queryTembusanNama);
+                    $stmtTembusanNama->bindParam(":tembusan", $temp2);
+//                    echo $temp;
+//                    die();
+                    $stmtTembusanNama->execute();
+                    if ($stmtTembusanNama->rowCount() > 0) {
+                        $rowTembusanNama = $stmtTembusanNama->fetch();
+                        array_push($tembusan2, $rowTembusanNama['nama']);
+                    }
+                }
+            } catch (PDOException $ex) {
+                echo $ex->getMessage();
+            }
+        }
+        
+        
     } catch (PDOException $e) {
         echo $e->getMessage();
     }
@@ -125,9 +168,9 @@ function previewSurat() {
     } else {
         $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
         for ($i = 0; $i < count($tembusan); $i++) {
-            $getNama = getAccountName($dbh, $tembusan[$i]);
-            if ($tembusan[$i] != '') {
-                $pdf->MultiCell(170, 0, $getNama['nama'], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+//            $getNama = getAccountName($dbh, $tembusan[$i]);
+            if ($tembusan2[$i] != '') {
+                $pdf->MultiCell(170, 0, $tembusan2[$i], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
             }
         }
     }
