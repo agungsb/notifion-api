@@ -577,7 +577,7 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     $account = $decode->account;
     $id_jabatan = $decode->id_jabatan;
 
-    $query = "SELECT surat.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan = :account or surat.penandatangan = :idJabatan) AND surat.ditandatangani !='2' AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
+    $query = "SELECT surat.*, institusi.nama_institusi, surat_kode_hal.deskripsi FROM `surat`, `institusi`, `surat_kode_hal` WHERE (surat.penandatangan = :account or surat.penandatangan = :idJabatan) AND surat.kode_lembaga_pengirim = institusi.id_institusi AND surat.kode_hal = surat_kode_hal.kode_hal ORDER BY surat.created DESC LIMIT :limit OFFSET :offset";
 
     $stmt = $db->prepare($query);
     $stmt->bindValue(":account", $account);
