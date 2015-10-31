@@ -455,7 +455,7 @@ function getTujuan() {
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['nama'], "identifier" => $row['account'], "keterangan" => "Dosen/Karyawan");
+            $output[$i] = array("deskripsi" => $row['nama'], "identifier" => $row['account'], "email1" => $row['email1'], "email2" => $row['email2'], "keterangan" => "Dosen/Karyawan");
             $i++;
         }
         $query = "SELECT jabatan.*, institusi.nama_institusi FROM jabatan, institusi WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = jabatan.id_institusi";
@@ -480,13 +480,13 @@ function getPenandatangan($token) {
 
     try {
         $db = getDB();
-        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.nama, jenis_user FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan AND jenis_user !=2 ";
+        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.email1, users.nama, jenis_user FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan AND jenis_user !=2 ";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi'], "nip" => $row['nip'], "nama" => $row['nama']);
+            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi'], "nip" => $row['nip'], "nama" => $row['nama'], "email1" => $row['email1']);
             $i++;
         }
         $db = null;

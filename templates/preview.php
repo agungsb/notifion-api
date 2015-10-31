@@ -30,7 +30,7 @@ function previewSurat() {
 
         $row = $stmt->fetch();
 
-        $hal = $row['subject_surat']; // Mendapatkan deskripsi dari HAL
+        $hal = $row['subject_surat']; // Mendapatkan deskripsi dari subject
         $input = $row['isi']; // Mendapatkan isi dari surat
         $tjb = $row['jabatan'];
         $lam2 = $row['lampiran'];
