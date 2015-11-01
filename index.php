@@ -36,6 +36,8 @@ require 'templates/authSurat.php';
 
 include_once 'GCM.php';
 
+include 'PHPMailer/PHPMailerAutoload.php';
+
 require __DIR__ . '/vendor/autoload.php';
 $app = new \Slim\Slim();
 
@@ -74,6 +76,7 @@ $app->delete('/delete', function () {
 
 $app->get('/checkUserOp', 'checkUserOp'); //testing only
 $app->get('/checkPejabat', 'checkPejabat'); //testing only
+$app->get('/getLampiran', 'getLampiran'); //testing only
 $app->get('/users', 'getAllUsers');
 $app->get('/users2', 'getAllUsersOP');
 $app->get('/users3', 'getAllUsersBiasa');
@@ -448,7 +451,7 @@ function getJabatanIns($token) {
 }
 
 function getTujuan() {
-    $sql = "SELECT users.* FROM users WHERE jenis_user = '3'";
+    $sql = "SELECT users.* FROM users WHERE (jenis_user = '3' OR jenis_user = '4')";
     try {
         $db = getDB();
         $stmt = $db->prepare($sql);
@@ -1822,7 +1825,7 @@ function accSurat() {
         if ($stmt->rowCount() == 1) {
             $row = $stmt->fetch();
 //            echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
-            updateTandatangan($db, $token, $id_surat, $row['subject_surat'], $account, $id_jabatan, $row['tujuan'], $row['tembusan'], $nama_institusi);
+            updateTandatangan($db, $token, $id_surat, $row['subject_surat'], $account, $id_jabatan, $row['tujuan'], $row['tembusan'], $nama_institusi, $row['file_surat'], $row['is_uploaded'], $row['lampiran'], $row['no_surat']);
         } else {
             echo '{"error": "Action not granted"}';
         }
@@ -1882,7 +1885,7 @@ function setRead() {
     }
 }
 
-function updateTandatangan($db, $token, $id_surat, $subject, $account, $id_jabatan, $tujuan, $tembusan, $nama_institusi) {
+function updateTandatangan($db, $token, $id_surat, $subject, $account, $id_jabatan, $tujuan, $tembusan, $nama_institusi, $file_surat, $isUploaded, $lampiran, $nosurat) {
     $query = "UPDATE `surat` SET surat.ditandatangani='1' WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_surat", $id_surat);
@@ -1890,7 +1893,7 @@ function updateTandatangan($db, $token, $id_surat, $subject, $account, $id_jabat
     $stmt->bindValue(":id_jabatan", $id_jabatan);
     try {
         if ($stmt->execute()) {
-            distribusiSurat($db, $token, $id_surat, $subject, $tujuan, $tembusan, $nama_institusi);
+            distribusiSurat($db, $token, $id_surat, $subject, $tujuan, $tembusan, $nama_institusi, $file_surat, $isUploaded, $lampiran, $nosurat);
         }
         $db = null;
     } catch (PDOException $ex) {
@@ -1898,20 +1901,44 @@ function updateTandatangan($db, $token, $id_surat, $subject, $account, $id_jabat
     }
 }
 
-function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama_institusi) {
+function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama_institusi, $file_surat, $isUploaded, $lampiran, $nosurat) {
     $tujuan = explode("@+id/", $tu); // explode dulu tujuannya
-
     $registration_ids = array();
+    $temp_email = array();
 
     for ($i = 0; $i < count($tujuan); $i++) {
         if (!empty($tujuan[$i])) {
 //            echo $id_surat . " - " . $tujuan[$i] . " - " . $tembusan . " <br/>";
-            kirimSurat($db, $id_surat, $tujuan[$i], $tembusan);
+            kirimSurat($db, $id_surat, $tujuan[$i]);
             if ((pushNotification($db, $tujuan[$i])) != null) {
                 $registration_ids = pushNotification($db, $tujuan[$i]);
             }
+
+            if ((pushNotificationEmail($db, $tujuan[$i])) != null) {
+                $temp_email[$i] = pushNotificationEmail($db, $tujuan[$i]);
+            }
         }
     }
+
+    if (count($temp_email) > 0) {
+        for ($i = 0; $i < count($temp_email); $i++) {
+            $penerima = implode("", $temp_email[$i]);
+            if ($isUploaded == 'false') {
+                sendEmail($subject, $penerima, $file_surat, $lampiran, $nama_institusi);
+            } else {
+                $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                $result2 = $db->prepare($sql);
+                $result2->execute();
+                if ($result2->rowCount() > 0) { // Jika ditemukan
+                    $rowEmail = $result2->fetch();
+                    $fileSurat = $rowEmail['file_path'];
+                    sendEmailUploaded($subject, $penerima, $fileSurat, $lampiran, $nama_institusi);
+                }
+            }
+        }
+    }
+
+
     if (count($registration_ids) > 0) {
         $gcm = new GCM();
         $pesan = array("message" => $subject, "title" => "Surat baru dari $nama_institusi", "msgcnt" => 1, "sound" => "beep.wav");
@@ -1919,11 +1946,11 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
     } else {
         $result = '"Not a GCM User"';
     }
-    echo '{"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $result . '}';
+    echo '{"countEmail": ' . count($temp_email) . ',"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $result . '}';
 //    echo $result;
 }
 
-function kirimSurat($db, $id_surat, $tujuan, $tembusan) {
+function kirimSurat($db, $id_surat, $tujuan) {
     $query = "INSERT INTO `surat_terdistribusi`(`id_surat`, `penerima`, `isUnread`) VALUES (:id_surat, :tujuan, 1)";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":id_surat", $id_surat);
@@ -1957,6 +1984,26 @@ function pushNotification($db, $tujuan) {
 //            return $row['gcm_regid'];
             while ($row = $stmt->fetch()) {
                 array_push($output, $row['gcm_regid']);
+            }
+            return $output;
+        }
+
+        $db = null;
+    } catch (PDOException $ex) {
+        echo '{"error": "' . $ex->getMessage() . '"}';
+    }
+}
+
+function pushNotificationEmail($db, $tujuan) {
+    $query = "SELECT users.email1 FROM users WHERE users.account = :tujuan OR users.id_jabatan = :tujuan";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":tujuan", $tujuan);
+    try {
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $output = array();
+            while ($row = $stmt->fetch()) {
+                array_push($output, $row['email1']);
             }
             return $output;
         }
@@ -2050,4 +2097,20 @@ function is_connected() {
         $is_conn = false; //action in connection failure
     }
     return $is_conn;
+}
+
+function getLampiran() {
+    $db = getDB();
+    $no_surat = '3/UN39.18/AK/15';
+    $sqlLampiran = "SELECT surat_lampiran.file_path from surat_lampiran WHERE no_surat='" . $no_surat . "'";
+    $stmtLampiran = $db->prepare($sqlLampiran);
+    $stmtLampiran->execute();
+
+    $i = 0;
+    while ($row = $stmtLampiran->fetch()) {
+        $lampiran[$i] = array("file_path" => $row['file_path']);
+        $i++;
+    }
+
+    echo json_encode($lampiran);
 }

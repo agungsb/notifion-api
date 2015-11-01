@@ -76,20 +76,6 @@ function submitSurat() {
             if (is_connected()) {
                 //tambahkan pengaturan if else nya ketika internet mati fungsi yang dijalankan hanya sms
 
-//                echo $tanggal_surat;
-//                echo ' || ';
-//                echo $nosurat;
-//                echo ' || ';
-//                echo $paramLampiran;
-//                echo ' || ';
-//                print_r($paramTujuan);
-//                echo $paramIsi . '-';
-//                echo ' || ';
-//                print_r($paramPenandatangan);
-//                print_r($paramTembusan);
-//                echo $paramSubject;
-//                die();
-
                 $stmt->execute();
                 //Add Blob File
                 $file_pdf = blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramTujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
@@ -122,7 +108,7 @@ function submitSurat() {
                     if ($result->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result->fetch();
                         $fileSurat = $rowEmail['file_surat'];
-                        sendEmail($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $db);
+                        sendEmail($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi);
                     }
                 } else {
                     $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
@@ -131,7 +117,7 @@ function submitSurat() {
                     if ($result->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result->fetch();
                         $fileSurat = $rowEmail['file_path'];
-                        sendEmailUploaded($paramSubject, $penandatanganEmail, $fileSurat);
+                        sendEmailUploaded($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi);
                     }
                 }
 
@@ -143,7 +129,8 @@ function submitSurat() {
                 $gcm = new GCM();
                 $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
                 $result = $gcm->send_notification($registration_ids, $pesan);
-                echo '{"result": "success", "account": "' . $penandatangan . '"}';
+//                echo '{"result": "success", "account": "' . $penandatangan . '"}';
+                echo '{"result": "Berhasil Submit Surat dan Mengirim Notifikasi Ke Email"}';
             } else {
                 echo '{"result": "internet off"}';
             }
@@ -284,9 +271,10 @@ function blobPdf($paramTanggalSurat, $paramNoSurat, $paramLampiran, $tujuan, $in
     $result->execute();
 }
 
-function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $db) {
-    include 'PHPMailer/PHPMailerAutoload.php';
+function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+//    include 'PHPMailer/PHPMailerAutoload.php';
 
+//$db, $no_surat
     $mail = new PHPMailer(); // create a new object
     $mail->IsSMTP(); // enable SMTP
 //$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
@@ -297,33 +285,37 @@ function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $db) {
     $mail->IsHTML(true);
     $mail->Username = "firdausibnuu@gmail.com";
     $mail->Password = "firdausibnu21";
-    $mail->SetFrom("firdaus.ibnuu@gmail.com");
+    $mail->SetFrom("notifion.info");
     $mail->Subject = $paramSubject;
-    $mail->Body = "Test PDF.";
+    if ($paramLampiran > 0) {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . "<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+    } else {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject;
+    }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
-    if ($paramLampiran > 0) {
-        for ($i = 0; $i < $paramLampiran; $i++) {
-            $path = getFileLampiran($no_surat, $db);
-            $path_lampiran = json_decode($path);
-            
-            
-            $mail->addAttachment($paramLampiran);
-        }
-    }
+//    if ($paramLampiran > 0) {
+//        for ($i = 0; $i < $paramLampiran; $i++) {
+//            $path = json_decode(getFileLampiran($no_surat, $db));
+//            for ($i = 0; $i < count($path); $i++) {
+//                $mail->addAttachment($path[$i]->file_path);
+//            }
+//        }
+//    }
+
     $mail->AddAddress($email);
     if (!$mail->Send()) {
-        echo "<script type='text/javascript'>alert('GAGAL MENGIRIM EMAIL.');</script>";
+//        echo "GAGAL KIRIM EMAIL";
         //header("refresh: 0;url=index.php");
         $mail->ErrorInfo;
     } else {
-        echo "<script type='text/javascript'>alert('BERHASIL MENGIRIM EMAIL.');</script>";
+//        echo "BERHASIL KIRIM EMAIL";
         //header("refresh: 0;url=index.php");
     }
 }
 
-function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran) {
-    include 'PHPMailer/PHPMailerAutoload.php';
+function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+//    include 'PHPMailer/PHPMailerAutoload.php';
 
     $mail = new PHPMailer(); // create a new object
     $mail->IsSMTP(); // enable SMTP
@@ -335,38 +327,36 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran) {
     $mail->IsHTML(true);
     $mail->Username = "firdausibnuu@gmail.com";
     $mail->Password = "firdausibnu21";
-    $mail->SetFrom("firdaus.ibnuu@gmail.com");
+    $mail->SetFrom("notifion.info");
     $mail->Subject = $paramSubject;
-    $mail->Body = "Test PDF.";
+    if ($paramLampiran > 0) {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . "<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+    } else {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject;
+    }
     $email = $receiver;
     $mail->addAttachment($output);
-    if ($paramLampiran > 0) {
-        for ($i = 0; $i < $paramLampiran, $i++;) {
-            $mail->addAttachment($paramLampiran);
-        }
-    }
-    $mail->addStringAttachment($output, $paramSubject . '.pdf');
     $mail->AddAddress($email);
     if (!$mail->Send()) {
-        echo "<script type='text/javascript'>alert('GAGAL MENGIRIM EMAIL.');</script>";
+//        echo "GAGAL KIRIM EMAIL";
         //header("refresh: 0;url=index.php");
         $mail->ErrorInfo;
     } else {
-        echo "<script type='text/javascript'>alert('BERHASIL MENGIRIM EMAIL.');</script>";
+//        echo "BERHASIL KIRIM EMAIL";
         //header("refresh: 0;url=index.php");
     }
 }
 
 function getFileLampiran($no_surat, $db) {
-    $sqlLampiran = "SELECT surat_lampiran.file_path WHERE no_surat='" . $no_surat . "'";
+    $sqlLampiran = "SELECT surat_lampiran.file_path FROM surat_lampiran WHERE no_surat='" . $no_surat . "'";
     $stmtLampiran = $db->prepare($sqlLampiran);
     $stmtLampiran->execute();
 
     $i = 0;
     while ($row = $stmtLampiran->fetch()) {
-        $lampiran[$i] = $row['file_path'];
+        $lampiran[$i] = array("file_path" => $row['file_path']);
         $i++;
     }
-    
-    return $lampiran;
+
+    echo json_encode($lampiran);
 }
