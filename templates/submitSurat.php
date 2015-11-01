@@ -77,10 +77,8 @@ function submitSurat() {
 //        blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramHal, $tujuan, $paramIsi, $paramPenandatangan, $tembusan, $paramSubject);
 //        die();
         try {
-            if (is_connected() === TRUE) {
+            if (is_connected()) {
                 //tambahkan pengaturan if else nya ketika internet mati fungsi yang dijalankan hanya sms
-                echo '{"result": "internet nyala"}';
-                die();
                 $stmt->execute();
                 //Add Blob File
                 $file_pdf = blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramHal, $tujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
@@ -107,14 +105,23 @@ function submitSurat() {
                     }
                 }
 
-                if ($penandatangan != null) {
+                if ($penandatangan != null && $paramUploaded == 'false') {
                     $sql = "SELECT surat.file_surat From surat WHERE no_surat='" . $nosurat . "'";
                     $result = $db->prepare($sql);
                     $result->execute();
                     if ($result->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result->fetch();
                         $fileSurat = $rowEmail['file_surat'];
-                        sendEmail($paramSubject, $penandatanganEmail, $fileSurat);
+                        sendEmail($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $db);
+                    }
+                } else {
+                    $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                    $result = $db->prepare($sql);
+                    $result->execute();
+                    if ($result->rowCount() > 0) { // Jika ditemukan
+                        $rowEmail = $result->fetch();
+                        $fileSurat = $rowEmail['file_path'];
+                        sendEmailUploaded($paramSubject, $penandatanganEmail, $fileSurat);
                     }
                 }
 
@@ -341,7 +348,7 @@ function blobPdf($paramTanggalSurat, $paramNoSurat, $paramLampiran, $paramHal, $
     $result->execute();
 }
 
-function sendEmail($paramSubject, $receiver, $output) {
+function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $db) {
     include 'PHPMailer/PHPMailerAutoload.php';
 
     $mail = new PHPMailer(); // create a new object
@@ -358,7 +365,16 @@ function sendEmail($paramSubject, $receiver, $output) {
     $mail->Subject = $paramSubject;
     $mail->Body = "Test PDF.";
     $email = $receiver;
-    $mail->addStringAttachment($output, $paramSubject.'.pdf');
+    $mail->addStringAttachment($output, $paramSubject . '.pdf');
+    if ($paramLampiran > 0) {
+        for ($i = 0; $i < $paramLampiran; $i++) {
+            $path = getFileLampiran($no_surat, $db);
+            $path_lampiran = json_decode($path);
+            
+            
+            $mail->addAttachment($paramLampiran);
+        }
+    }
     $mail->AddAddress($email);
     if (!$mail->Send()) {
         echo "<script type='text/javascript'>alert('GAGAL MENGIRIM EMAIL.');</script>";
@@ -368,4 +384,52 @@ function sendEmail($paramSubject, $receiver, $output) {
         echo "<script type='text/javascript'>alert('BERHASIL MENGIRIM EMAIL.');</script>";
         //header("refresh: 0;url=index.php");
     }
+}
+
+function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran) {
+    include 'PHPMailer/PHPMailerAutoload.php';
+
+    $mail = new PHPMailer(); // create a new object
+    $mail->IsSMTP(); // enable SMTP
+//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
+    $mail->SMTPAuth = true; // authentication enabled
+    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
+    $mail->Host = "smtp.gmail.com";
+    $mail->Port = 465; // or 587
+    $mail->IsHTML(true);
+    $mail->Username = "firdausibnuu@gmail.com";
+    $mail->Password = "firdausibnu21";
+    $mail->SetFrom("firdaus.ibnuu@gmail.com");
+    $mail->Subject = $paramSubject;
+    $mail->Body = "Test PDF.";
+    $email = $receiver;
+    $mail->addAttachment($output);
+    if ($paramLampiran > 0) {
+        for ($i = 0; $i < $paramLampiran, $i++;) {
+            $mail->addAttachment($paramLampiran);
+        }
+    }
+    $mail->AddAddress($email);
+    if (!$mail->Send()) {
+        echo "<script type='text/javascript'>alert('GAGAL MENGIRIM EMAIL.');</script>";
+        //header("refresh: 0;url=index.php");
+        $mail->ErrorInfo;
+    } else {
+        echo "<script type='text/javascript'>alert('BERHASIL MENGIRIM EMAIL.');</script>";
+        //header("refresh: 0;url=index.php");
+    }
+}
+
+function getFileLampiran($no_surat, $db) {
+    $sqlLampiran = "SELECT surat_lampiran.file_path WHERE no_surat='" . $no_surat . "'";
+    $stmtLampiran = $db->prepare($sqlLampiran);
+    $stmtLampiran->execute();
+
+    $i = 0;
+    while ($row = $stmtLampiran->fetch()) {
+        $lampiran[$i] = $row['file_path'];
+        $i++;
+    }
+    
+    return $lampiran;
 }
