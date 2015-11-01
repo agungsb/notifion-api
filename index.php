@@ -526,7 +526,7 @@ function getSpecificUserInfo($account) {
         $stmt->execute();
         $row = $stmt->fetch();
         $getNama = getAccountName($db, $account);
-        $output = array("name" => ($row['jabatan'] == 'None') ? $row['nama'] : $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => ($row['nama_institusi'] == 'None') ? "Dosen/Karyawan" : $row['nama_institusi'], "nip" => $row['nip'], "nama" =>  $getNama['nama'], "image" => 'http://' . $_SERVER['SERVER_NAME'] . '/images/user-male.png'); //http://localhost/notifion-api/images/user-male.png
+        $output = array("name" => ($row['jabatan'] == 'None') ? $row['nama'] : $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => ($row['nama_institusi'] == 'None') ? "Dosen/Karyawan" : $row['nama_institusi'], "nip" => $row['nip'], "nama" => $getNama['nama'], "image" => 'http://' . $_SERVER['SERVER_NAME'] . '/images/user-male.png'); //http://localhost/notifion-api/images/user-male.png
         $db = null;
         echo '{"result": ' . json_encode($output) . '}';
     } catch (PDOException $e) {
@@ -781,7 +781,6 @@ function identifyTembusan($dbh, $params) {
     }
     return $result;
 }
-
 
 function countFavorites($token = '', $account = '', $id_jabatan = '') {
     $db = getDB();
@@ -2038,4 +2037,16 @@ function increment4($input, $inc) {
             return $input;
         }
     }
+}
+
+function is_connected() {
+    $connected = @fsockopen("www.google.com", 80);
+    //website, port  (try 80 or 443)
+    if ($connected) {
+        $is_conn = true; //action when connected
+        fclose($connected);
+    } else {
+        $is_conn = false; //action in connection failure
+    }
+    return $is_conn;
 }

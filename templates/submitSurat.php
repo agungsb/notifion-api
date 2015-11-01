@@ -77,8 +77,11 @@ function submitSurat() {
 //        blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramHal, $tujuan, $paramIsi, $paramPenandatangan, $tembusan, $paramSubject);
 //        die();
         try {
-            if ($stmt->execute()) {
-
+            if (is_connected() === TRUE) {
+                //tambahkan pengaturan if else nya ketika internet mati fungsi yang dijalankan hanya sms
+                echo '{"result": "internet nyala"}';
+                die();
+                $stmt->execute();
                 //Add Blob File
                 $file_pdf = blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramHal, $tujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
 
@@ -125,7 +128,7 @@ function submitSurat() {
                 $result = $gcm->send_notification($registration_ids, $pesan);
                 echo '{"result": "success", "account": "' . $penandatangan . '"}';
             } else {
-                echo '{"result": "Gagal mengeksekusi query"}';
+                echo '{"result": "internet off"}';
             }
         } catch (PDOException $ex) {
 //            echo $ex->getMessage();
