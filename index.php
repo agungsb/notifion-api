@@ -560,7 +560,8 @@ function getAllSurats($token, $offset, $limit) {
             } else {
                 $role = $account;
             }
-            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $penandatangan = getAccountName($db, $row['penandatangan']);
+            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => $penandatangan['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
     } else {
@@ -589,8 +590,8 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $test = getAccountName($db, $row['penandatangan']);
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => $test['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $penandatangan = getAccountName($db, $row['penandatangan']);
+            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => $penandatangan['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
             $i++;
         }
     } else {
