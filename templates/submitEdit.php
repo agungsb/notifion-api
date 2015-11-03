@@ -67,23 +67,32 @@ function submitEdit() {
         $stmt->bindValue(":is_uploaded", $paramUploaded);
         $stmt->bindValue(":no_surat", $nosurat);
 
+//        $removedOldAttachments = json_decode($req['removedOldAttachments']);
+//        for ($i = 0; $i < count($removedOldAttachments); $i++) {
+//            echo $removedOldAttachments->id_lampiran;
+//        }
+//        die();
         try {
-            if ($stmt->execute()) { // Jika berhasil meng-update surat
-                // Hapus surat dari tabel surat_koreksi
-                if (!HapusSuratKoreksi($db, $nosurat)) {
-                    die('{"result": "Gagal menghapus surat koreksi"}');
-                }
-
+            if (is_connected()) { // Jika berhasil meng-update surat
+                $stmt->execute();
                 // Jika ada lampiran lama yang dihapus oleh user
+
                 if ($req['totalRemovedOldAttachments'] > 0) {
                     // Hapus lampiran-lampirannya surat dari tabel surat_lampiran
                     $removedOldAttachments = json_decode($req['removedOldAttachments']);
                     for ($i = 0; $i < count($removedOldAttachments); $i++) {
                         echo $removedOldAttachments[$i]->id_lampiran;
+                        $tempNama = substr($removedOldAttachments[$i]->file_path, 19);
+                        $hapusFileAttachment = unlink("assets/attachments/" . $tempNama);
                         if (!HapusSuratAttachmentKoreksi($db, $removedOldAttachments[$i]->id_lampiran)) {
                             die('{"result": "Gagal menghapus lampiran surat koreksi"}');
                         }
                     }
+                }
+
+                // Hapus surat dari tabel surat_koreksi
+                if (!HapusSuratKoreksi($db, $nosurat)) {
+                    die('{"result": "Gagal menghapus surat koreksi"}');
                 }
 
                 // JIka surat merupakan hasil upload, upload file-nya ke folder yang telah ditentukan
@@ -105,6 +114,35 @@ function submitEdit() {
                                 die('{"result": "Gagal mengupload lampiran"}');
                             }
                         }
+                    }
+                }
+
+                if ($penandatangan != null && $paramUploaded == 'false') {
+                    $sql = "SELECT surat.penandatangan, surat.file_surat From surat WHERE no_surat='" . $nosurat . "'";
+                    $result = $db->prepare($sql);
+                    $result->execute();
+                    if ($result->rowCount() > 0) { // Jika ditemukan
+                        $rowEmail = $result->fetch();
+                        $fileSurat = $rowEmail['file_surat'];
+                        $email = $rowEmail['penandatangan'];
+
+                        $emailnya = pushNotificationEmail($db, $email);
+                        $emailnyaa = implode("", $emailnya);
+//                        echo $emailnyaa;
+//                        die();
+                        sendEmail($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                    }
+                } else {
+                    $sql = "SELECT surat_uploaded.file_path, surat.penandatangan From surat, surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                    $result = $db->prepare($sql);
+                    $result->execute();
+                    if ($result->rowCount() > 0) { // Jika ditemukan
+                        $rowEmail = $result->fetch();
+                        $fileSurat = $rowEmail['file_path'];
+                        $email = $rowEmail['penandatangan'];
+                        $emailnya = pushNotificationEmail($db, $email);
+                        $emailnyaa = implode("", $emailnya);
+                        sendEmailUploaded($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
                     }
                 }
 

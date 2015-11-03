@@ -83,6 +83,7 @@ $app->get('/users3', 'getAllUsersBiasa');
 $app->get('/tujuan', 'getTujuan');
 $app->get('/specificUserInfo/:account', 'getSpecificUserInfo');
 $app->get('/jabatansIns/:token', 'getJabatanIns');
+$app->get('/getJabatanBaru/:token', 'getJabatanBaru');
 $app->get('/penandatangan/:token', 'getPenandatangan');
 $app->get('/user/:token', 'getUser');
 $app->get('/surats/:token/:offset/:limit', 'getAllSurats');
@@ -124,7 +125,7 @@ $app->put('/setFavorite', 'setFavorite');
 $app->put('/setRead', 'setRead');
 $app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
-$app->delete('/hapusPejabat/:token/:account', 'hapusPejabat');
+$app->delete('/hapusPejabat/:token/:account/:jabatan', 'hapusPejabat');
 $app->delete('/hapusUserBiasa/:token/:account', 'hapusUserBiasa');
 $app->delete('/hapusJabatan/:token/:jabatan', 'hapusJabatan');
 $app->delete('/hapusInstansi/:token/:instansi', 'hapusInstansi');
@@ -228,7 +229,7 @@ function hapusJabatan($token, $jabatan) {
     }
 }
 
-function hapusPejabat($token, $account) {
+function hapusPejabat($token, $account, $jabatan) {
 
     $db = getDB();
 
@@ -250,6 +251,11 @@ function hapusPejabat($token, $account) {
             $stmt2->bindValue(":jenis_user", '4');
             $stmt2->bindValue(":account", $account);
             if ($stmt2->execute()) {
+                $query3 = "UPDATE `jabatan` SET is_set=:is_set WHERE jabatan=:jabatan";
+                $stmt3 = $db->prepare($query3);
+                $stmt3->bindValue(":is_set", '0');
+                $stmt3->bindValue(":jabatan", $jabatan);
+                $stmt3->execute();
                 echo '{"result": "Berhasil Reset Jabatan"}';
             }
         } else {
@@ -436,6 +442,27 @@ function getJabatanIns($token) {
     $id_institusi = $decode->id_institusi;
 
     $sql = "SELECT * from jabatan WHERE id_institusi = :id_institusi";
+    try {
+        $db = getDB();
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(":id_institusi", $id_institusi);
+        $stmt->execute();
+        $output = $stmt->fetchAll(PDO::FETCH_OBJ);
+        $db = null;
+        echo '{"result": ' . json_encode($output) . '}';
+    } catch (PDOException $e) {
+//error_log($e->getMessage(), 3, '/var/tmp/phperror.log'); //Write error log
+        echo "{'error':{text':'" . $e->getMessage() . "'}}";
+    }
+}
+
+function getJabatanBaru($token) {
+    $db = getDB();
+
+    $decode = JWT::decode($token, TK);
+    $id_institusi = $decode->id_institusi;
+
+    $sql = "SELECT * from jabatan WHERE id_institusi = :id_institusi AND is_set=0";
     try {
         $db = getDB();
         $stmt = $db->prepare($sql);
@@ -1605,11 +1632,12 @@ function addJabatan() {
 //    echo $id_jabatan_new;
 //    die();
     if ($check == 0) {
-        $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
+        $query = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan, is_set) VALUES (:id_jabatan, :id_institusi, :jabatan, :is_set)";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_jabatan", $id_jabatan_new);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->bindValue(":jabatan", $paramJabatan);
+        $stmt->bindValue(":is_set", '0');
         if ($stmt->execute()) {
             echo '{"result": "Berhasil Tambah Jabatan"}';
         } else {
@@ -1658,6 +1686,11 @@ function setJabatan() {
             $stmt->bindValue(":jenis_user", '3');
             $stmt->bindValue(":account", $paramAccount);
             if ($stmt->execute()) {
+                $query2 = "UPDATE `jabatan` SET is_set=:is_set WHERE id_jabatan=:jabatan";
+                $stm2 = $db->prepare($query2);
+                $stm2->bindValue(":jabatan", $paramJabatan);
+                $stm2->bindValue(":is_set", "1");
+                $stm2->execute();
                 echo '{"result": "Berhasil Set Jabatan"}';
             } else {
                 echo '{"result": "Gagal Set Jabatan"}';

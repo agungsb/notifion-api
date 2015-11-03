@@ -1,0 +1,22 @@
+bug dan rencana solusi bug.
+
+1. biar ga salah ngoreksi
+   solusi : jenis pengiriman = uploaded / manual (ditampilkan di surat koreksi)
+   status : not yet.
+2. jika surat biasa dikoreksi dengan mengupload surat, ketika di view di penandatangan jadi ngaco.
+   rencana solusi : disable tab upload jika suratnya manual / sebaliknya di fitur surat koreksi
+   status : not yet.
+3. jika suratnya dibuat dengan upload surat, belum otomatis muncul surat pdfnya di tab upload agar bisa di unlink dari    belakang
+   rencana solusi : munculkan file yang di upload sebelumnya di surat koreksi (bagian belakangnya insyaAllah bisa)
+   status : not yet.
+4. database tabel surat kalo di hapus salah satu fieldnya yang ga kepake misal nama_surat routing jadi error dan ga bisa      edit surat
+   rencana solusi : ?? gatau ga kebayang
+   status : not yet
+5. status menunggu surat keluar di penandatangan ketika dikoreksi belom ada
+   rencana solusi : kasih lambang operboden untuk menandakan surat sedang dikoreksi
+   status : not yet
+6. notif email ketika dikoreksi oleh operator dikembalikan ke penandatangan (done)
+7. notif email ke semua tujuan surat ketika pejabat melakukan acc surat (done)
+8. notif email untuk operator ketika pejabat menekan tombol koreksi (on going)
+
+point 1 - 5 kebanyakan maen di depan bang. gue banyak yang ga pahamnya. apalagi yang masalah di koreksi. masalah masalah di belakang udah gue beresin ga gue catetin disini. sisa ini dari hasil debug program hari ini.
