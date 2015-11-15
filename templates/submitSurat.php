@@ -14,9 +14,9 @@ function submitSurat() {
         $paramSubject = $req['subject'];
         $paramIdInstitusi = $decode->id_institusi;
         $paramNamaInstitusi = $decode->nama_institusi;
-        $paramHal = $req['hal'];
 
         $paramLampiran = $req['lampiran'];
+        $paramHal = $req['hal'];
 
         $paramTujuan = json_decode($req['tujuan']);
         $tujuan = "";
@@ -29,6 +29,7 @@ function submitSurat() {
         for ($i = 0; $i < count($paramPenandatangan); $i++) {
             $penandatangan = $paramPenandatangan[0]->identifier;
             $penandatanganEmail = $paramPenandatangan[0]->email;
+            $paramHP = $paramPenandatangan[0]->nohp;
         }
         if (isset($req['isi'])) {
             $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
@@ -70,6 +71,7 @@ function submitSurat() {
         $stmt->bindValue(":tanggal_surat", $tanggal_surat);
         $stmt->bindValue(":ditandatangani", '0');
         $stmt->bindValue(":is_uploaded", $paramUploaded);
+//        echo $paramHP;
 //        blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramHal, $tujuan, $paramIsi, $paramPenandatangan, $tembusan, $paramSubject);
 //        die();
         try {
@@ -132,7 +134,32 @@ function submitSurat() {
 //                echo '{"result": "success", "account": "' . $penandatangan . '"}';
                 echo '{"result": "Berhasil Submit Surat dan Mengirim Notifikasi Ke Email"}';
             } else {
-                echo '{"result": "internet off"}';
+//                echo '{"result": "internet off"}';
+                if ($stmt->execute()) {
+                    $file_pdf = blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramTujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
+
+                    if ($paramUploaded) {
+                        $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
+                        if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
+                            if (!InsertSuratUploaded($db, $nosurat, $file_path)) {
+                                die('{"result": "Gagal mengupload surat"}');
+                            }
+                        }
+                    }
+
+                    // Setelah berhasil mengeksekusi query, upload file ke folder yang telah ditentukan
+                    if ($paramLampiran > 0) {
+                        for ($i = 0; $i < $paramLampiran; $i++) {
+                            $destination = 'assets/attachments/' . $_FILES[$i]['name'];
+                            if (move_uploaded_file($_FILES[$i]['tmp_name'], $destination)) {
+                                if (!InsertSuratAttachment($db, $nosurat, $destination)) {
+                                    die('{"result": "Gagal mengupload lampiran"}');
+                                }
+                            }
+                        }
+                    }
+                    sendSms($paramHP, $db, $paramNamaInstitusi, $paramSubject, $paramLampiran);
+                }
             }
         } catch (PDOException $ex) {
 //            echo $ex->getMessage();
@@ -273,7 +300,6 @@ function blobPdf($paramTanggalSurat, $paramNoSurat, $paramLampiran, $tujuan, $in
 
 function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
 //    include 'PHPMailer/PHPMailerAutoload.php';
-
 //$db, $no_surat
     $mail = new PHPMailer(); // create a new object
     $mail->IsSMTP(); // enable SMTP
@@ -344,6 +370,20 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $p
     } else {
 //        echo "BERHASIL KIRIM EMAIL";
         //header("refresh: 0;url=index.php");
+    }
+}
+
+function sendSms($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran) {
+    $text = 'Surat Baru dari "' . $paramInstitusi . ' untuk dikoreksi. Mengenai "' . $paramSubject . '" dengan lampiran sebanyak "' . $paramLampiran . '". Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.';
+    $sqlSMS = "INSERT INTO outbox (DestinationNumber, TextDecoded, CreatorID) VALUES (".$nohp.", 'a', 'Gammu')";
+    $stmtSMS = $db->prepare($sqlSMS);
+//    $stmtSMS->bindValue(":nohp", $nohp);
+//    $stmtSMS->bindValue(":test", $text);
+//    $stmtSMS->bindValue(":creator", 'Notifion-SMS');
+    if ($stmtSMS->execute()) {
+        echo '{"result": "Internet OFF, Berhasil Mengirim Notifikasi SMS"}';
+    } else {
+        echo '{"result": "Internet OFF, Gagal Mengirim Notifikasi SMS"}';
     }
 }
 

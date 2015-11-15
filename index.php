@@ -485,7 +485,7 @@ function getTujuan() {
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['nama'], "identifier" => $row['account'], "email1" => $row['email1'], "email2" => $row['email2'], "keterangan" => "Dosen/Karyawan");
+            $output[$i] = array("deskripsi" => $row['nama'], "identifier" => $row['account'], "email1" => $row['email1'], "nohp" => $row['nohp1'], "keterangan" => "Dosen/Karyawan");
             $i++;
         }
         $query = "SELECT jabatan.*, institusi.nama_institusi FROM jabatan, institusi WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi = jabatan.id_institusi";
@@ -510,13 +510,13 @@ function getPenandatangan($token) {
 
     try {
         $db = getDB();
-        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.email1, users.nama, jenis_user FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan AND jenis_user !=2 ";
+        $query = "SELECT jabatan.*, institusi.nama_institusi, users.nip, users.email1, users.nohp1, users.nama, jenis_user FROM jabatan, institusi, users WHERE jabatan.id_jabatan != '000000000' AND institusi.id_institusi=:id_institusi AND institusi.id_institusi = jabatan.id_institusi AND jabatan.id_jabatan = users.id_jabatan AND jenis_user !=2 ";
         $stmt = $db->prepare($query);
         $stmt->bindValue(":id_institusi", $id_institusi);
         $stmt->execute();
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi'], "nip" => $row['nip'], "nama" => $row['nama'], "email1" => $row['email1']);
+            $output[$i] = array("deskripsi" => $row['jabatan'], "identifier" => $row['id_jabatan'], "keterangan" => $row['nama_institusi'], "nip" => $row['nip'], "nama" => $row['nama'], "email1" => $row['email1'], "nohp1" => $row['nohp1']);
             $i++;
         }
         $db = null;
@@ -1149,39 +1149,30 @@ function editBio() {
     $paramPassword = $req['password'];
     $paramNip = $req['nip'];
     $paramEmail1 = $req['email1'];
-    $paramEmail2 = $req['email2'];
     $paramNohp1 = $req['nohp1'];
-    $paramNohp2 = $req['nohp2'];
 
-    if (isset($req['email2'])) {
-        $paramEmail2 = $req['email2'];
+    if (isset($req['email1'])) {
+        $paramEmail1 = $req['email1'];
     } else {
-        $paramEmail2 = "";
+        $paramEmail1 = "";
     }
     if (isset($req['nohp1'])) {
         $paramNohp1 = $req['nohp1'];
     } else {
         $paramNohp1 = "";
     }
-    if (isset($req['nohp2'])) {
-        $paramNohp2 = $req['nohp2'];
-    } else {
-        $paramNohp2 = "";
-    }
 
     $decode = JWT::decode($token, TK);
     $akun = $decode->account;
 
-    $query = "UPDATE `users` SET nama=:nama, password=:password, gender=:jeniskelamin, nip=:nip, email1=:email1, email2=:email2, nohp1=:nohp1, nohp2=:nohp2 WHERE account=:account";
+    $query = "UPDATE `users` SET nama=:nama, password=:password, gender=:jeniskelamin, nip=:nip, email1=:email1, nohp1=:nohp1 WHERE account=:account";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":nama", $paramNama);
     $stmt->bindValue(":password", $paramPassword);
     $stmt->bindValue(":nip", $paramNip);
     $stmt->bindValue(":jeniskelamin", $paramGender);
     $stmt->bindValue(":email1", $paramEmail1);
-    $stmt->bindValue(":email2", $paramEmail2);
     $stmt->bindValue(":nohp1", $paramNohp1);
-    $stmt->bindValue(":nohp2", $paramNohp2);
     $stmt->bindValue(":account", $akun);
 
     $stmt->execute();
