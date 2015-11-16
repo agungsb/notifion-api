@@ -35,6 +35,12 @@ function submitEdit() {
         } else {
             $paramIsi = "";
         }
+        
+        if(isset($req['is_uploaded'])){
+            if($req['is_uploaded'] == TRUE){
+                $paramIsi = "";
+            }
+        }
 
         $paramTanggalSurat = $req['tanggal_surat'];
         $timezone_identifier = "Asia/Jakarta";
@@ -71,7 +77,6 @@ function submitEdit() {
 //        for ($i = 0; $i < count($removedOldAttachments); $i++) {
 //            echo $removedOldAttachments->id_lampiran;
 //        }
-//        die();
         try {
             if (is_connected()) { // Jika berhasil meng-update surat
                 $stmt->execute();
@@ -133,8 +138,9 @@ function submitEdit() {
                         sendEmailEdit($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
                     }
                 } else {
-                    $sql = "SELECT surat_uploaded.file_path, surat.penandatangan From surat, surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                    $sql = "SELECT surat_uploaded.file_path, surat.penandatangan From surat, surat_uploaded WHERE surat.no_surat=:no_surat AND surat_uploaded.no_surat = surat.no_surat";
                     $result = $db->prepare($sql);
+                    $result->bindValue(':no_surat', $nosurat);
                     $result->execute();
                     if ($result->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result->fetch();
@@ -300,12 +306,12 @@ function sendSmsEdit($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran,
     if ($out = substr(exec($cmd), 47, 2)) {
         if ($out == "OK") {
             $sql = "UPDATE surat SET pesan_sms='" . $out . "' where no_surat='" . $nosurat . "'";
-            $stmt=$db->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute();
             echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';
-        }else{
+        } else {
             $sql = "UPDATE surat SET pesan_sms='pending' where no_surat='" . $nosurat . "'";
-            $stmt=$db->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute();
         }
     } else {
@@ -331,7 +337,7 @@ function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $param
     if ($paramLampiran > 0) {
         $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " sudah diperbaiki dan menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
@@ -373,7 +379,7 @@ function sendEmailEditUploaded($paramSubject, $receiver, $output, $paramLampiran
     if ($paramLampiran > 0) {
         $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " sudah diperbaiki dan menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addAttachment($output);

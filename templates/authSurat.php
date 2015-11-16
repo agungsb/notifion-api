@@ -23,9 +23,9 @@ function authSurat() {
 
 function checkEditorCredential($db, $no_surat, $id_institusi) {
     $output = array();
-    $stmt = $db->prepare("SELECT surat.id_surat, surat.subject_surat, surat.nama_surat, surat.no_surat, surat.jenis,"
+    $stmt = $db->prepare("SELECT surat_uploaded.file_path, surat.id_surat, surat.subject_surat, surat.nama_surat, surat.no_surat, surat.jenis,"
             . "surat.hal, surat.isi, surat.kode_hal, surat.kode_lembaga_pengirim, surat.penandatangan, surat.tujuan,"
-            . "surat.lampiran, surat.tembusan, surat.tanggal_surat FROM `surat`, `surat_koreksi` WHERE surat_koreksi.no_surat = :no_surat AND surat_koreksi.no_surat = surat.no_surat AND surat.kode_lembaga_pengirim = :id_institusi");
+            . "surat.lampiran, surat.tembusan, surat.tanggal_surat, surat.is_uploaded FROM `surat`, `surat_koreksi`, `surat_uploaded` WHERE surat_koreksi.no_surat = :no_surat AND surat_koreksi.no_surat = surat.no_surat AND surat.kode_lembaga_pengirim = :id_institusi AND surat_uploaded.no_surat = surat.no_surat");
     $stmt->bindValue(':no_surat', $no_surat);
     $stmt->bindValue(':id_institusi', $id_institusi);
     try {
