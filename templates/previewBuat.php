@@ -20,17 +20,17 @@ function previewBuat() {
     $paramTanggalSurat = $req['tanggal_surat']; // Getting parameter with names
 //    $paramNoSurat = $req['nosurat'];
     $paramLampiran2 = $req['lampiran'];
-        
-        if($paramLampiran2 == 0){
-            $paramLampiran = '-';
-        }  else {
-            $paramLampiran = $req['lampiran'];
-        }
+
+    if ($paramLampiran2 == 0) {
+        $paramLampiran = '-';
+    } else {
+        $paramLampiran = $req['lampiran'];
+    }
     $paramHal = $req['subject'];
     $paramTujuan = $req['tujuan'];
     $paramPenandatangan = $req['penandatangan'];
     $paramTembusan = $req['tembusan'];
-    $paramIsiSurat = $req['isi'];   
+    $paramIsiSurat = $req['isi'];
 
     $paramNoSurat = checkCounter($db, $id_institusi, true) . "/UN39." . getKodeUnit($db, $id_institusi) . "/" . $req['hal'] . "/" . date('y');
 
@@ -91,12 +91,14 @@ function previewBuat() {
     $pdf->MultiCell(170, 0, 'NIP.' . $paramPenandatangan[0]['nip'], 0, 'L', 0, 1, 140, '', true, 0, false, true, 0, 'T', true);
 
 //Tembusan
-    $pdf->setCellMargins(0, 7, 0, 0);
-    $pdf->setCellMargins(0, 0, 0, 0);
-    $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
-    for ($i = 0; $i < count($paramTembusan); $i++) {
-        if ($paramTembusan[$i] != '') {
-            $pdf->MultiCell(170, 0, ($i + 1) . '. ' . $paramTembusan[$i]['name'], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+    if ($paramTembusan == null) {
+        $pdf->MultiCell(170, 0, '', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+    } else {
+        $pdf->MultiCell(170, 0, 'Tembusan :', 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+        for ($i = 0; $i < count($paramTembusan); $i++) {
+            if ($paramTembusan[$i] != '') {
+                $pdf->MultiCell(170, 0, ($i + 1) . '. ' . $paramTembusan[$i]['name'], 0, 'L', 0, 1, 25, '', true, 0, false, true, 0, 'T', true);
+            }
         }
     }
 

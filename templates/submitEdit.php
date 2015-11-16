@@ -130,7 +130,7 @@ function submitEdit() {
                         $emailnyaa = implode("", $emailnya);
 //                        echo $emailnyaa;
 //                        die();
-                        sendEmail($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                        sendEmailEdit($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
                     }
                 } else {
                     $sql = "SELECT surat_uploaded.file_path, surat.penandatangan From surat, surat_uploaded WHERE no_surat='" . $nosurat . "'";
@@ -142,7 +142,7 @@ function submitEdit() {
                         $email = $rowEmail['penandatangan'];
                         $emailnya = pushNotificationEmail($db, $email);
                         $emailnyaa = implode("", $emailnya);
-                        sendEmailUploaded($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                        sendEmailEditUploaded($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
                     }
                 }
 
@@ -156,7 +156,74 @@ function submitEdit() {
                 $result = $gcm->send_notification($registration_ids, $pesan);
                 echo '{"result": "success", "account": "' . $penandatangan . '"}';
             } else {
-                echo '{"result": "Gagal mengeksekusi query"}';
+//                echo '{"result": "Internet Off"}';
+                if ($stmt->execute()) {
+                    // Jika ada lampiran lama yang dihapus oleh user
+
+                    if ($req['totalRemovedOldAttachments'] > 0) {
+                        // Hapus lampiran-lampirannya surat dari tabel surat_lampiran
+                        $removedOldAttachments = json_decode($req['removedOldAttachments']);
+                        for ($i = 0; $i < count($removedOldAttachments); $i++) {
+                            echo $removedOldAttachments[$i]->id_lampiran;
+                            $tempNama = substr($removedOldAttachments[$i]->file_path, 19);
+                            $hapusFileAttachment = unlink("assets/attachments/" . $tempNama);
+                            if (!HapusSuratAttachmentKoreksi($db, $removedOldAttachments[$i]->id_lampiran)) {
+                                die('{"result": "Gagal menghapus lampiran surat koreksi"}');
+                            }
+                        }
+                    }
+
+                    // Hapus surat dari tabel surat_koreksi
+                    if (!HapusSuratKoreksi($db, $nosurat)) {
+                        die('{"result": "Gagal menghapus surat koreksi"}');
+                    }
+
+                    // JIka surat merupakan hasil upload, upload file-nya ke folder yang telah ditentukan
+                    if ($paramUploaded == 'true') {
+                        $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
+                        if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
+                            if (!InsertSuratUploadedKoreksi($db, $nosurat, $file_path)) {
+                                die('{"result": "Gagal mengupload surat"}');
+                            }
+                        }
+                    }
+
+                    // Jika ada lampiran baru, upload file lampiran ke folder yang telah ditentukan
+                    if ($req['totalNewAttachments'] > 0) {
+                        for ($i = 0; $i < $req['totalNewAttachments']; $i++) {
+                            $destination = 'assets/attachments/' . $_FILES[$i]['name'];
+                            if (move_uploaded_file($_FILES[$i]['tmp_name'], $destination)) {
+                                if (!InsertSuratAttachmentKoreksi($db, $nosurat, $destination)) {
+                                    die('{"result": "Gagal mengupload lampiran"}');
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($penandatangan != null && $paramUploaded == 'false') {
+                    $sql = "SELECT surat.penandatangan, surat.file_surat From surat WHERE no_surat='" . $nosurat . "'";
+                    $result = $db->prepare($sql);
+                    $result->execute();
+                    if ($result->rowCount() > 0) { // Jika ditemukan
+                        $rowSMS = $result->fetch();
+                        $tujuann = $rowSMS['penandatangan'];
+                        $nohp = pushNotificationSMS($db, $tujuann);
+                        $tujuanHp = implode("", $nohp);
+                        sendSmsEdit($tujuanHp, $db, $paramNamaInstitusi, $paramSubject, $paramLampiran, $nosurat);
+                    }
+                } else {
+                    $sql = "SELECT surat_uploaded.file_path, surat.penandatangan From surat, surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                    $result = $db->prepare($sql);
+                    $result->execute();
+                    if ($result->rowCount() > 0) { // Jika ditemukan
+                        $rowSMS = $result->fetch();
+                        $tujuann = $rowSMS['penandatangan'];
+                        $nohp = pushNotificationSMS($db, $tujuann);
+                        $tujuanHp = implode("", $nohp);
+                        sendSmsEdit($tujuanHp, $db, $paramNamaInstitusi, $paramSubject, $paramLampiran, $nosurat);
+                    }
+                }
             }
         } catch (PDOException $ex) {
 //            echo $ex->getMessage();
@@ -221,5 +288,102 @@ function HapusSuratAttachmentKoreksi($db, $id_lampiran) {
         }
     } catch (PDOException $ex) {
         return false;
+    }
+}
+
+function sendSmsEdit($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, $nosurat) {
+    $sms = "Surat dari " . $paramInstitusi . " telah dikoreksi. Mengenai " . $paramSubject . " dengan lampiran sebanyak " . $paramLampiran . " Lampiran. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.";
+    $gammuexe = "C:\gammu\bin\gammu.exe";
+    $gammurc = "C:\gammu\bin\gammurc";
+
+    $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
+    if ($out = substr(exec($cmd), 47, 2)) {
+        if ($out == "OK") {
+            $sql = "UPDATE surat SET pesan_sms='" . $out . "' where no_surat='" . $nosurat . "'";
+            $stmt=$db->prepare($sql);
+            $stmt->execute();
+            echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';
+        }else{
+            $sql = "UPDATE surat SET pesan_sms='pending' where no_surat='" . $nosurat . "'";
+            $stmt=$db->prepare($sql);
+            $stmt->execute();
+        }
+    } else {
+        die('{"result": "Gagal Kirim SMS"}');
+    }
+}
+
+function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+//    include 'PHPMailer/PHPMailerAutoload.php';
+//$db, $no_surat
+    $mail = new PHPMailer(); // create a new object
+    $mail->IsSMTP(); // enable SMTP
+//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
+    $mail->SMTPAuth = true; // authentication enabled
+    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
+    $mail->Host = "smtp.gmail.com";
+    $mail->Port = 465; // or 587
+    $mail->IsHTML(true);
+    $mail->Username = "firdausibnuu@gmail.com";
+    $mail->Password = "firdausibnu21";
+    $mail->SetFrom("notifion.info");
+    $mail->Subject = $paramSubject;
+    if ($paramLampiran > 0) {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+    } else {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " sudah diperbaiki dan menunggu untuk di validasi.";
+    }
+    $email = $receiver;
+    $mail->addStringAttachment($output, $paramSubject . '.pdf');
+//    if ($paramLampiran > 0) {
+//        for ($i = 0; $i < $paramLampiran; $i++) {
+//            $path = json_decode(getFileLampiran($no_surat, $db));
+//            for ($i = 0; $i < count($path); $i++) {
+//                $mail->addAttachment($path[$i]->file_path);
+//            }
+//        }
+//    }
+
+    $mail->AddAddress($email);
+    if (!$mail->Send()) {
+//        echo "GAGAL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+        $mail->ErrorInfo;
+    } else {
+//        echo "BERHASIL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+    }
+}
+
+function sendEmailEditUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+//    include 'PHPMailer/PHPMailerAutoload.php';
+
+    $mail = new PHPMailer(); // create a new object
+    $mail->IsSMTP(); // enable SMTP
+//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
+    $mail->SMTPAuth = true; // authentication enabled
+    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
+    $mail->Host = "smtp.gmail.com";
+    $mail->Port = 465; // or 587
+    $mail->IsHTML(true);
+    $mail->Username = "firdausibnuu@gmail.com";
+    $mail->Password = "firdausibnu21";
+    $mail->SetFrom("notifion.info");
+    $mail->Subject = $paramSubject;
+    if ($paramLampiran > 0) {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+    } else {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " sudah diperbaiki dan menunggu untuk di validasi.";
+    }
+    $email = $receiver;
+    $mail->addAttachment($output);
+    $mail->AddAddress($email);
+    if (!$mail->Send()) {
+//        echo "GAGAL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+        $mail->ErrorInfo;
+    } else {
+//        echo "BERHASIL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
     }
 }

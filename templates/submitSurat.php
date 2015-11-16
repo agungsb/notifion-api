@@ -72,6 +72,7 @@ function submitSurat() {
         $stmt->bindValue(":ditandatangani", '0');
         $stmt->bindValue(":is_uploaded", $paramUploaded);
 //        echo $paramHP;
+//        echo $paramUploaded;
 //        blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramHal, $tujuan, $paramIsi, $paramPenandatangan, $tembusan, $paramSubject);
 //        die();
         try {
@@ -80,7 +81,7 @@ function submitSurat() {
 
                 $stmt->execute();
                 //Add Blob File
-                $file_pdf = blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramTujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
+                blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramTujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
 
                 if ($paramUploaded) {
                     $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
@@ -136,9 +137,9 @@ function submitSurat() {
             } else {
 //                echo '{"result": "internet off"}';
                 if ($stmt->execute()) {
-                    $file_pdf = blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramTujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
+                    blobPdf($tanggal_surat, $nosurat, $paramLampiran, $paramTujuan, $paramIsi, $paramPenandatangan, $paramTembusan, $paramSubject);
 
-                    if ($paramUploaded) {
+                    if ($paramUploaded == 'true') {
                         $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
                         if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
                             if (!InsertSuratUploaded($db, $nosurat, $file_path)) {
@@ -158,7 +159,8 @@ function submitSurat() {
                             }
                         }
                     }
-                    sendSms($paramHP, $db, $paramNamaInstitusi, $paramSubject, $paramLampiran);
+
+                    sendSms($paramHP, $db, $paramNamaInstitusi, $paramSubject, $paramLampiran, $nosurat);
                 }
             }
         } catch (PDOException $ex) {
@@ -314,9 +316,9 @@ function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNama
     $mail->SetFrom("notifion.info");
     $mail->Subject = $paramSubject;
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . "<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject;
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
@@ -356,9 +358,9 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $p
     $mail->SetFrom("notifion.info");
     $mail->Subject = $paramSubject;
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . "<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject;
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addAttachment($output);
@@ -373,17 +375,25 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $p
     }
 }
 
-function sendSms($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran) {
-    $text = 'Surat Baru dari "' . $paramInstitusi . ' untuk dikoreksi. Mengenai "' . $paramSubject . '" dengan lampiran sebanyak "' . $paramLampiran . '". Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.';
-    $sqlSMS = "INSERT INTO outbox (DestinationNumber, TextDecoded, CreatorID) VALUES (".$nohp.", 'a', 'Gammu')";
-    $stmtSMS = $db->prepare($sqlSMS);
-//    $stmtSMS->bindValue(":nohp", $nohp);
-//    $stmtSMS->bindValue(":test", $text);
-//    $stmtSMS->bindValue(":creator", 'Notifion-SMS');
-    if ($stmtSMS->execute()) {
-        echo '{"result": "Internet OFF, Berhasil Mengirim Notifikasi SMS"}';
+function sendSms($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, $nosurat) {
+    $sms = "Surat Baru dari " . $paramInstitusi . " untuk dikoreksi. Mengenai " . $paramSubject . " dengan lampiran sebanyak " . $paramLampiran . " Lampiran. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.";
+    $gammuexe = "C:\gammu\bin\gammu.exe";
+    $gammurc = "C:\gammu\bin\gammurc";
+
+    $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
+    if ($out = substr(exec($cmd), 47, 2)) {
+        if ($out == "OK") {
+            $sql = "UPDATE surat SET pesan_sms='" . $out . "' where no_surat='" . $nosurat . "'";
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';
+        } else {
+            $sql = "UPDATE surat SET pesan_sms='pending' where no_surat='" . $nosurat . "'";
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+        }
     } else {
-        echo '{"result": "Internet OFF, Gagal Mengirim Notifikasi SMS"}';
+        die('{"result": "Gagal Kirim SMS"}');
     }
 }
 
