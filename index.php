@@ -1231,11 +1231,12 @@ function addUserOp() {
                 }
             }
             if ($check_jab == 0) {
-                $sql = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan) VALUES (:id_jabatan, :id_institusi, :jabatan)";
+                $sql = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan, is_set) VALUES (:id_jabatan, :id_institusi, :jabatan, :is_set)";
                 $add_jab = $db->prepare($sql);
                 $add_jab->bindValue(":id_jabatan", $tiga);
                 $add_jab->bindValue(":id_institusi", $paramInstitusi);
                 $add_jab->bindValue(":jabatan", 'operator_' . $paramNamaInstitusi2);
+                $add_jab->bindValue(":is_set",  '1');
                 if ($add_jab->execute()) {
                     $namaNew = 'operator_' . $paramNamaInstitusi;
                     $namaNew2 = strtolower($namaNew);
