@@ -1844,12 +1844,12 @@ function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $
                     $fileSurat = $rowEmail['file_path'];
                     $emailnya = pushNotificationEmail($db, $penandatangan);
                     $tujuanEmail = implode("", $emailnya);
-                    sendEmailEditUploaded($subject, $tujuanEmail, $fileSurat, $lampiran, $nama_institusi);
+                    sendEmailKoreksiUploaded($subject, $tujuanEmail, $fileSurat, $lampiran, $nama_institusi, $no_surat);
                 }
             } else {
                 $emailnya = pushNotificationEmail($db, $penandatangan);
                 $tujuanEmail = implode("", $emailnya);
-                sendEmailEdit($subject, $tujuanEmail, $file_surat, $lampiran, $nama_institusi);
+                sendEmailKoreksi($subject, $tujuanEmail, $file_surat, $lampiran, $nama_institusi, $no_surat);
             }
             echo '{"result": "Success", "account": "' . $id_institusi . '", "isCorrected": ' . countCorrected($id_institusi) . '}';
         } else {
@@ -2217,9 +2217,9 @@ function is_connected() {
     return $is_conn;
 }
 
-function getLampiran() {
-    $db = getDB();
-    $no_surat = '3/UN39.18/AK/15';
+function getLampiran($db, $no_surat) {
+//    $db = getDB();
+//    $no_surat = '3/UN39.18/AK/15';
     $sqlLampiran = "SELECT surat_lampiran.file_path from surat_lampiran WHERE no_surat='" . $no_surat . "'";
     $stmtLampiran = $db->prepare($sqlLampiran);
     $stmtLampiran->execute();
@@ -2241,7 +2241,7 @@ function sendSmsAcc($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, 
     $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
     if ($out = substr(exec($cmd), 47, 2)) {
         if ($out == "OK") {
-            $sql = "UPDATE surat SET pesan_sms='" . $out . "' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where no_surat='" . $nosurat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
             echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';
@@ -2263,7 +2263,7 @@ function sendSmsKoreksi($nohp, $db, $nosurat, $pesan) {
     $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
     if ($out = substr(exec($cmd), 47, 2)) {
         if ($out == "OK") {
-            $sql = "UPDATE surat SET pesan_sms='" . $out . "' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where no_surat='" . $nosurat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
 //            echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';

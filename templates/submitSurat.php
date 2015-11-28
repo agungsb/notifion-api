@@ -111,7 +111,7 @@ function submitSurat() {
                     if ($result->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result->fetch();
                         $fileSurat = $rowEmail['file_surat'];
-                        sendEmail($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                        sendEmail($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi, $nosurat);
                     }
                 } else {
                     $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
@@ -120,7 +120,7 @@ function submitSurat() {
                     if ($result->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result->fetch();
                         $fileSurat = $rowEmail['file_path'];
-                        sendEmailUploaded($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                        sendEmailUploaded($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi, $nosurat);
                     }
                 }
 
@@ -300,7 +300,7 @@ function blobPdf($paramTanggalSurat, $paramNoSurat, $paramLampiran, $tujuan, $in
     $result->execute();
 }
 
-function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi, $nosurat) {
 //    include 'PHPMailer/PHPMailerAutoload.php';
 //$db, $no_surat
     $mail = new PHPMailer(); // create a new object
@@ -314,7 +314,7 @@ function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNama
     $mail->Username = "firdausibnuu@gmail.com";
     $mail->Password = "firdausibnu21";
     $mail->SetFrom("notifion.info");
-    $mail->Subject = $paramSubject;
+    $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
         $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
@@ -342,7 +342,7 @@ function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNama
     }
 }
 
-function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi, $nosurat) {
 //    include 'PHPMailer/PHPMailerAutoload.php';
 
     $mail = new PHPMailer(); // create a new object
@@ -356,9 +356,9 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $p
     $mail->Username = "firdausibnuu@gmail.com";
     $mail->Password = "firdausibnu21";
     $mail->SetFrom("notifion.info");
-    $mail->Subject = $paramSubject;
+    $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor surat ".$nosurat." menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
         $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " menunggu untuk di validasi.";
     }
@@ -376,14 +376,14 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $p
 }
 
 function sendSms($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, $nosurat) {
-    $sms = "Surat Baru dari " . $paramInstitusi . " untuk dikoreksi. Mengenai " . $paramSubject . " dengan lampiran sebanyak " . $paramLampiran . " Lampiran. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.";
+    $sms = "Surat Baru dari " . $paramInstitusi . " untuk dikoreksi. Mengenai " . $paramSubject . " dengan No : ".$nosurat." dan lampiran sebanyak " . $paramLampiran . " Lampiran. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.";
     $gammuexe = "C:\gammu\bin\gammu.exe";
     $gammurc = "C:\gammu\bin\gammurc";
 
     $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
     if ($out = substr(exec($cmd), 47, 2)) {
         if ($out == "OK") {
-            $sql = "UPDATE surat SET pesan_sms='" . $out . "' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where no_surat='" . $nosurat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
             echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';

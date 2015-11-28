@@ -7,6 +7,7 @@ function submitEdit() {
 
     $paramToken = $req['token'];
     $paramUploaded = $req['is_uploaded'];
+    $wasUploaded = $req['was_uploaded'];
 
     $decode = JWT::decode($paramToken, TK);
     if ($decode->valid) {
@@ -35,9 +36,9 @@ function submitEdit() {
         } else {
             $paramIsi = "";
         }
-        
-        if(isset($req['is_uploaded'])){
-            if($req['is_uploaded'] == TRUE){
+
+        if (isset($req['is_uploaded'])) {
+            if ($req['is_uploaded'] == TRUE) {
                 $paramIsi = "";
             }
         }
@@ -87,7 +88,9 @@ function submitEdit() {
                     $removedOldAttachments = json_decode($req['removedOldAttachments']);
                     for ($i = 0; $i < count($removedOldAttachments); $i++) {
 //                        echo $removedOldAttachments[$i]->id_lampiran;
-                        $tempNama = substr($removedOldAttachments[$i]->file_path, 19);
+                        $str = $removedOldAttachments[$i]->file_path;
+                        $explode = explode("/", $str);
+                        $tempNama = $explode[count($explode) - 1]; //ambil variabel nama lampiran
                         $hapusFileAttachment = unlink("assets/attachments/" . $tempNama);
                         if (!HapusSuratAttachmentKoreksi($db, $removedOldAttachments[$i]->id_lampiran)) {
                             die('{"result": "Gagal menghapus lampiran surat koreksi"}');
@@ -101,11 +104,16 @@ function submitEdit() {
                 }
 
                 // JIka surat merupakan hasil upload, upload file-nya ke folder yang telah ditentukan
-                if ($paramUploaded == 'true') {
+                if ($paramUploaded == 'true' AND $wasUploaded == 'true') {
                     $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
+                    UpdateSuratUploaded($db, $nosurat, $req['OldFileUploaded'], $file_path);
                     if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
-                        if (!InsertSuratUploadedKoreksi($db, $nosurat, $file_path)) {
-                            die('{"result": "Gagal mengupload surat"}');
+                        $str = $req['OldFileUploaded'];
+                        $exp = explode("/", $str);
+                        $tempNama = $exp[count($exp) - 1];
+                        unlink("assets/uploaded/" . $tempNama);
+                        if (!UpdateSuratUploaded($db, $nosurat, $req['OldFileUploaded'], $file_path)) {
+                            die('{"result": "Gagal update surat"}');
                         }
                     }
                 }
@@ -135,7 +143,7 @@ function submitEdit() {
                         $emailnyaa = implode("", $emailnya);
 //                        echo $emailnyaa;
 //                        die();
-                        sendEmailEdit($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                        sendEmailEdit($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi, $nosurat);
                     }
                 } else {
                     $sql = "SELECT surat_uploaded.file_path, surat.penandatangan From surat, surat_uploaded WHERE surat.no_surat=:no_surat AND surat_uploaded.no_surat = surat.no_surat";
@@ -148,7 +156,7 @@ function submitEdit() {
                         $email = $rowEmail['penandatangan'];
                         $emailnya = pushNotificationEmail($db, $email);
                         $emailnyaa = implode("", $emailnya);
-                        sendEmailEditUploaded($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi);
+                        sendEmailEditUploaded($paramSubject, $emailnyaa, $fileSurat, $paramLampiran, $paramNamaInstitusi, $nosurat);
                     }
                 }
 
@@ -160,7 +168,7 @@ function submitEdit() {
                 $gcm = new GCM();
                 $pesan = array("message" => $paramSubject, "title" => "Surat keluar untuk $paramNamaInstitusi", "msgcnt" => 1, "sound" => "beep.wav");
                 $result = $gcm->send_notification($registration_ids, $pesan);
-                echo '{"result": "success", "account": "' . $penandatangan . '"}';
+                echo '{"result": "Berhasil Mengirim Surat Dan Notifikasi Email", "account": "' . $penandatangan . '"}';
             } else {
 //                echo '{"result": "Internet Off"}';
                 if ($stmt->execute()) {
@@ -170,8 +178,10 @@ function submitEdit() {
                         // Hapus lampiran-lampirannya surat dari tabel surat_lampiran
                         $removedOldAttachments = json_decode($req['removedOldAttachments']);
                         for ($i = 0; $i < count($removedOldAttachments); $i++) {
-                            echo $removedOldAttachments[$i]->id_lampiran;
-                            $tempNama = substr($removedOldAttachments[$i]->file_path, 19);
+//                            echo $removedOldAttachments[$i]->id_lampiran;
+                            $str = $removedOldAttachments[$i]->file_path;
+                            $explode = explode("/", $str);
+                            $tempNama = $explode[count($explode) - 1]; //ambil variabel nama lampiran
                             $hapusFileAttachment = unlink("assets/attachments/" . $tempNama);
                             if (!HapusSuratAttachmentKoreksi($db, $removedOldAttachments[$i]->id_lampiran)) {
                                 die('{"result": "Gagal menghapus lampiran surat koreksi"}');
@@ -185,11 +195,16 @@ function submitEdit() {
                     }
 
                     // JIka surat merupakan hasil upload, upload file-nya ke folder yang telah ditentukan
-                    if ($paramUploaded == 'true') {
+                    if ($paramUploaded == 'true' AND $wasUploaded == 'true') {
                         $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
+                        UpdateSuratUploaded($db, $nosurat, $req['OldFileUploaded'], $file_path);
                         if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
-                            if (!InsertSuratUploadedKoreksi($db, $nosurat, $file_path)) {
-                                die('{"result": "Gagal mengupload surat"}');
+                            $str = $req['OldFileUploaded'];
+                            $exp = explode("/", $str);
+                            $tempNama = $exp[count($exp) - 1];
+                            unlink("assets/uploaded/" . $tempNama);
+                            if (!UpdateSuratUploaded($db, $nosurat, $req['OldFileUploaded'], $file_path)) {
+                                die('{"result": "Gagal update surat"}');
                             }
                         }
                     }
@@ -297,6 +312,21 @@ function HapusSuratAttachmentKoreksi($db, $id_lampiran) {
     }
 }
 
+function UpdateSuratUploaded($db, $no_surat, $old, $new) {
+    // $file_path adalah $_FILES['isi']['tmp_name']
+    $query = "UPDATE `surat_uploaded` SET file_path=:file_path WHERE no_surat=:no_surat";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":no_surat", $no_surat);
+    $stmt->bindValue(":file_path", $new);
+    try {
+        if ($stmt->execute()) {
+            return true;
+        }
+    } catch (PDOException $ex) {
+        return false;
+    }
+}
+
 function sendSmsEdit($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, $nosurat) {
     $sms = "Surat dari " . $paramInstitusi . " telah dikoreksi. Mengenai " . $paramSubject . " dengan lampiran sebanyak " . $paramLampiran . " Lampiran. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.";
     $gammuexe = "C:\gammu\bin\gammu.exe";
@@ -319,7 +349,7 @@ function sendSmsEdit($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran,
     }
 }
 
-function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi, $nosurat) {
 //    include 'PHPMailer/PHPMailerAutoload.php';
 //$db, $no_surat
     $mail = new PHPMailer(); // create a new object
@@ -333,11 +363,11 @@ function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $param
     $mail->Username = "firdausibnuu@gmail.com";
     $mail->Password = "firdausibnu21";
     $mail->SetFrom("notifion.info");
-    $mail->Subject = $paramSubject;
+    $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
@@ -361,7 +391,7 @@ function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $param
     }
 }
 
-function sendEmailEditUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi) {
+function sendEmailEditUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi, $nosurat) {
 //    include 'PHPMailer/PHPMailerAutoload.php';
 
     $mail = new PHPMailer(); // create a new object
@@ -375,11 +405,86 @@ function sendEmailEditUploaded($paramSubject, $receiver, $output, $paramLampiran
     $mail->Username = "firdausibnuu@gmail.com";
     $mail->Password = "firdausibnu21";
     $mail->SetFrom("notifion.info");
-    $mail->Subject = $paramSubject;
+    $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " sudah diperbaiki dan menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.";
+    }
+    $email = $receiver;
+    $mail->addAttachment($output);
+    $mail->AddAddress($email);
+    if (!$mail->Send()) {
+//        echo "GAGAL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+        $mail->ErrorInfo;
+    } else {
+//        echo "BERHASIL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+    }
+}
+
+function sendEmailKoreksi($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi, $nosurat) {
+//    include 'PHPMailer/PHPMailerAutoload.php';
+//$db, $no_surat
+    $mail = new PHPMailer(); // create a new object
+    $mail->IsSMTP(); // enable SMTP
+//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
+    $mail->SMTPAuth = true; // authentication enabled
+    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
+    $mail->Host = "smtp.gmail.com";
+    $mail->Port = 465; // or 587
+    $mail->IsHTML(true);
+    $mail->Username = "firdausibnuu@gmail.com";
+    $mail->Password = "firdausibnu21";
+    $mail->SetFrom("notifion.info");
+    $mail->Subject = "notifion.info";
+    if ($paramLampiran > 0) {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+    } else {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+    }
+    $email = $receiver;
+    $mail->addStringAttachment($output, $paramSubject . '.pdf');
+//    if ($paramLampiran > 0) {
+//        for ($i = 0; $i < $paramLampiran; $i++) {
+//            $path = json_decode(getFileLampiran($no_surat, $db));
+//            for ($i = 0; $i < count($path); $i++) {
+//                $mail->addAttachment($path[$i]->file_path);
+//            }
+//        }
+//    }
+
+    $mail->AddAddress($email);
+    if (!$mail->Send()) {
+//        echo "GAGAL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+        $mail->ErrorInfo;
+    } else {
+//        echo "BERHASIL KIRIM EMAIL";
+        //header("refresh: 0;url=index.php");
+    }
+}
+
+function sendEmailKoreksiUploaded($paramSubject, $receiver, $output, $paramLampiran, $paramNamaInstitusi, $nosurat) {
+//    include 'PHPMailer/PHPMailerAutoload.php';
+
+    $mail = new PHPMailer(); // create a new object
+    $mail->IsSMTP(); // enable SMTP
+//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only
+    $mail->SMTPAuth = true; // authentication enabled
+    $mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for GMail
+    $mail->Host = "smtp.gmail.com";
+    $mail->Port = 465; // or 587
+    $mail->IsHTML(true);
+    $mail->Username = "firdausibnuu@gmail.com";
+    $mail->Password = "firdausibnu21";
+    $mail->SetFrom("notifion.info");
+    $mail->Subject = "notifion.info";
+    if ($paramLampiran > 0) {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+    } else {
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
     }
     $email = $receiver;
     $mail->addAttachment($output);
