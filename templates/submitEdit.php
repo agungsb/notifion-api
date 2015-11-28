@@ -86,7 +86,7 @@ function submitEdit() {
                     // Hapus lampiran-lampirannya surat dari tabel surat_lampiran
                     $removedOldAttachments = json_decode($req['removedOldAttachments']);
                     for ($i = 0; $i < count($removedOldAttachments); $i++) {
-                        echo $removedOldAttachments[$i]->id_lampiran;
+//                        echo $removedOldAttachments[$i]->id_lampiran;
                         $tempNama = substr($removedOldAttachments[$i]->file_path, 19);
                         $hapusFileAttachment = unlink("assets/attachments/" . $tempNama);
                         if (!HapusSuratAttachmentKoreksi($db, $removedOldAttachments[$i]->id_lampiran)) {

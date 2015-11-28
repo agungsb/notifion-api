@@ -1203,6 +1203,7 @@ function addUserOp() {
 
     for ($i = 0; $i < count($checkUserOp); $i++) { //pengecekan institusi yang belum ada operatornya
 //        echo $checkUserOp[$i]->account;
+//        echo '-';
         if ($paramInstitusi != $checkUserOp[$i]->id_institusi) {
             $check = 0;
         } else {
@@ -1230,7 +1231,7 @@ function addUserOp() {
                     $check_jab = 1;
                 }
             }
-            if ($check_jab == 0) {
+            if ($check_jab == 1 OR $check_jab == 0) {
                 $sql = "INSERT INTO jabatan (id_jabatan, id_institusi, jabatan, is_set) VALUES (:id_jabatan, :id_institusi, :jabatan, :is_set)";
                 $add_jab = $db->prepare($sql);
                 $add_jab->bindValue(":id_jabatan", $tiga);
@@ -1341,8 +1342,8 @@ function checkUserOp($db) {
 }
 
 function checkUserJabatan($db) {
-
-    $sql = "SELECT institusi.id_institusi, institusi.nama_institusi, users.id_jabatan from institusi, users WHERE institusi.id_institusi=users.id_institusi and jenis_user='2'";
+//    $db = getDB();
+    $sql = "SELECT institusi.id_institusi, institusi.nama_institusi, users.id_jabatan from institusi, users WHERE institusi.id_institusi=users.id_institusi and jenis_user=2";
     $stmt = $db->prepare($sql);
     $stmt->execute();
     $i = 0;
