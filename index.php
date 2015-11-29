@@ -133,6 +133,8 @@ $app->delete('/hapusInstitusi/:token/:institusi', 'hapusInstitusi');
 $app->delete('/hapusKodeHal/:token/:kode_hal', 'hapusKodeHal');
 $app->delete('/hapusKodeUnit/:token/:kode_unit', 'hapusKodeUnit');
 
+$app->get('/testpn/:tujuan', 'pn');
+
 // Panduan header interceptor
 $app->get('/testHeader', function() {
     headersInterceptor();
@@ -371,7 +373,6 @@ function editUser($token) {
     $jenis_user = $decode->jenis_user;
 
     $paramPassword = $req['password']; // Getting parameter with names
-
 //    echo $paramPassword;
 //
 //    die();
@@ -1089,19 +1090,24 @@ function registerGCMUser() {
         createGCMUser($gcm_regid, $account);
         $output = array("status" => true, "event" => "createGCMUser");
     } else {
-//        updateGCMUser($gcm_regid, $account);
+        updateGCMUser($gcm_regid, $account);
         $output = array("result" => "OK", "status" => "GCMUser is already exist");
     }
     echo json_encode($output);
 }
 
 function verifyGCMUser($gcm_regid) {
-    $query = "SELECT * FROM `gcm_users` WHERE gcm_regid='$gcm_regid'";
+    $query = "SELECT * FROM `gcm_users` WHERE gcm_regid=:gcm_regid";
     $db = getDB();
     $stmt = $db->prepare($query);
-    $stmt->execute();
-    $db = null;
-    return $stmt->rowCount();
+    try {
+        $stmt->bindValue(':gcm_regid', $gcm_regid);
+        $stmt->execute();
+        $db = null;
+        return $stmt->rowCount();
+    } catch (PDOException $ex) {
+        die($ex->getMessage());
+    }
 }
 
 function createGCMUser($gcm_regid, $account) {
@@ -1237,7 +1243,7 @@ function addUserOp() {
                 $add_jab->bindValue(":id_jabatan", $tiga);
                 $add_jab->bindValue(":id_institusi", $paramInstitusi);
                 $add_jab->bindValue(":jabatan", 'operator_' . $paramNamaInstitusi2);
-                $add_jab->bindValue(":is_set",  '1');
+                $add_jab->bindValue(":is_set", '1');
                 if ($add_jab->execute()) {
                     $namaNew = 'operator_' . $paramNamaInstitusi;
                     $namaNew2 = strtolower($namaNew);
@@ -2024,7 +2030,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
         echo '{"countEmail": ' . count($temp_email) . ',"isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . $result . '}';
 //    echo $result;
     } else {
-        //SMS
+//SMS
         $tujuan = explode("@+id/", $tu); // explode dulu tujuannya
         $temp_sms = array();
 
@@ -2065,8 +2071,37 @@ function kirimSurat($db, $id_surat, $tujuan) {
     }
 }
 
-function pushNotification($db, $tujuan) {
+function pn($tujuan) {
+    $db = getDB();
+    $query = "SELECT users.*, gcm_users.* FROM users, gcm_users WHERE (users.account = :tujuan OR users.id_jabatan = :tujuan) AND users.account = gcm_users.account";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":tujuan", $tujuan);
+    try {
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $output = array();
+            while ($row = $stmt->fetch()) {
+                array_push($output, $row['gcm_regid']);
+            }
+//            print_r($output);
+//            return $output;
+            $registration_ids = $output;
+            $gcm = new GCM();
+            $pesan = array("message" => 'subject', "title" => "Surat baru dari nama_institusi", "msgcnt" => 1, "sound" => "beep.wav");
+//            $result = $gcm->send_notification($registration_ids, $pesan);
+            print_r($registration_ids);
+            print_r($pesan);
+            $result = $gcm->send_notification($registration_ids, $pesan);
+            echo $result;
+        }
 
+        $db = null;
+    } catch (PDOException $ex) {
+        echo '{"error": "' . $ex->getMessage() . '"}';
+    }
+}
+
+function pushNotification($db, $tujuan) {
     $query = "SELECT users.*, gcm_users.* FROM users, gcm_users WHERE (users.account = :tujuan OR users.id_jabatan = :tujuan) AND users.account = gcm_users.account";
     $stmt = $db->prepare($query);
     $stmt->bindValue(":tujuan", $tujuan);
@@ -2207,7 +2242,7 @@ function increment4($input, $inc) {
 
 function is_connected() {
     $connected = @fsockopen("www.google.com", 80);
-    //website, port  (try 80 or 443)
+//website, port  (try 80 or 443)
     if ($connected) {
         $is_conn = true; //action when connected
         fclose($connected);
@@ -2284,17 +2319,16 @@ function encrypt_decrypt($action, $string) {
     $secret_key = 'This is my secret key';
     $secret_iv = 'This is my secret iv';
 
-    // hash
+// hash
     $key = hash('sha256', $secret_key);
-    
-    // iv - encrypt method AES-256-CBC expects 16 bytes - else you will get a warning
+
+// iv - encrypt method AES-256-CBC expects 16 bytes - else you will get a warning
     $iv = substr(hash('sha256', $secret_iv), 0, 16);
 
-    if( $action == 'encrypt' ) {
+    if ($action == 'encrypt') {
         $output = openssl_encrypt($string, $encrypt_method, $key, 0, $iv);
         $output = base64_encode($output);
-    }
-    else if( $action == 'decrypt' ){
+    } else if ($action == 'decrypt') {
         $output = openssl_decrypt(base64_decode($string), $encrypt_method, $key, 0, $iv);
     }
 
