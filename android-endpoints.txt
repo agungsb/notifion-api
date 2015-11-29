@@ -1,0 +1,10 @@
+$app->get('/surats/:token/:offset/:limit', 'getAllSurats'); //1
+$app->get('/suratsKeluar/:token/:offset/:limit', 'getAllSuratsKeluar'); //2
+$app->get('/favorites/:token/:offset/:limit', 'getAllFavorites'); //3
+$app->post('/login', 'authLogin'); //4
+$app->post('/registerGCMUser', 'registerGCMUser'); //5
+$app->post('/unregisterGCMUser', 'unregisterGCMUser'); //6
+$app->put('/accSurat', 'accSurat'); //7
+$app->put('/koreksiSurat', 'koreksiSurat'); //8
+$app->put('/setFavorite', 'setFavorite'); //9
+$app->put('/setRead', 'setRead'); //10

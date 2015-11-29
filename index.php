@@ -86,10 +86,10 @@ $app->get('/jabatansIns/:token', 'getJabatanIns');
 $app->get('/getJabatanBaru/:token', 'getJabatanBaru');
 $app->get('/penandatangan/:token', 'getPenandatangan');
 $app->get('/user/:token', 'getUser');
-$app->get('/surats/:token/:offset/:limit', 'getAllSurats');//4
-$app->get('/suratsKeluar/:token/:offset/:limit', 'getAllSuratsKeluar');//3
+$app->get('/surats/:token/:offset/:limit', 'getAllSurats'); //1
+$app->get('/suratsKeluar/:token/:offset/:limit', 'getAllSuratsKeluar'); //2
 $app->get('/suratsDraft/:token/:offset/:limit', 'getAllSuratsDraft');
-$app->get('/favorites/:token/:offset/:limit', 'getAllFavorites');//5
+$app->get('/favorites/:token/:offset/:limit', 'getAllFavorites'); //3
 $app->get('/pejabats', 'getAllPejabats');
 $app->get('/pejabatsIns/:token', 'getPejabatsIns');
 $app->get('/kodeHals', 'getKodeHals');
@@ -102,9 +102,9 @@ $app->get('/sse/:id', 'getSse');
 $app->post('/preview', 'previewSurat');
 $app->post('/previewBuat', 'previewBuat');
 $app->get('/view/:id/:token', 'viewSurat');
-$app->post('/login', 'authLogin');//6
-$app->post('/registerGCMUser', 'registerGCMUser'); //1
-$app->post('/unregisterGCMUser', 'unregisterGCMUser');//2
+$app->post('/login', 'authLogin'); //4
+$app->post('/registerGCMUser', 'registerGCMUser'); //5
+$app->post('/unregisterGCMUser', 'unregisterGCMUser'); //6
 $app->post('/submitSurat', 'submitSurat');
 $app->post('/submitEdit', 'submitEdit');
 $app->post('/previewKoreksi', 'previewKoreksi');
@@ -119,10 +119,10 @@ $app->post('/addJabatan', 'addJabatan');
 $app->post('/setJabatan', 'setJabatan');
 $app->post('/attachments', 'saveAttachments'); // testing only
 $app->post('/authSurat', 'authSurat');
-$app->put('/accSurat', 'accSurat');//10
-$app->put('/koreksiSurat', 'koreksiSurat');//9
-$app->put('/setFavorite', 'setFavorite');//7
-$app->put('/setRead', 'setRead');//8
+$app->put('/accSurat', 'accSurat'); //7
+$app->put('/koreksiSurat', 'koreksiSurat'); //8
+$app->put('/setFavorite', 'setFavorite'); //9
+$app->put('/setRead', 'setRead'); //10
 $app->put('/editUser/:token', 'editUser');
 $app->delete('/hapusUser/:token/:account', 'hapusUser');
 $app->delete('/hapusPejabat/:token/:account/:jabatan', 'hapusPejabat');
