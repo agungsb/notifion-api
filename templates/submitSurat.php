@@ -316,9 +316,9 @@ function sendEmail($paramSubject, $receiver, $output, $paramLampiran, $paramNama
     $mail->SetFrom("notifion.info");
     $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . ".<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. ".";
     }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
@@ -358,9 +358,9 @@ function sendEmailUploaded($paramSubject, $receiver, $output, $paramLampiran, $p
     $mail->SetFrom("notifion.info");
     $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor surat ".$nosurat." menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . ".<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. " menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject. ".";
     }
     $email = $receiver;
     $mail->addAttachment($output);
