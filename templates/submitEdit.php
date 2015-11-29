@@ -31,15 +31,15 @@ function submitEdit() {
             $penandatangan = $paramPenandatangan[0]->identifier;
         }
 
-        if (isset($req['isi'])) {
-            $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
-        } else {
-            $paramIsi = "";
-        }
-
         if (isset($req['is_uploaded'])) {
-            if ($req['is_uploaded'] == TRUE) {
+            if ($req['is_uploaded'] == 'true') {
                 $paramIsi = "";
+            } else if ($req['is_uploaded'] == 'false') {
+                if (isset($req['isi'])) {
+                    $paramIsi = str_replace('<span style="color: rgba(0, 0, 0, 0.870588);float: none;background-color: rgb(255, 255, 255);">', '', $req['isi']);
+                } else {
+                    $paramIsi = "";
+                }
             }
         }
 
@@ -47,6 +47,11 @@ function submitEdit() {
         $timezone_identifier = "Asia/Jakarta";
         date_default_timezone_set($timezone_identifier);
 //        $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
+
+//        echo $req['is_uploaded'] . "\n";
+//        echo $paramIsi . "\n";
+//        print_r($req);
+//        die();
 
         $query = "UPDATE `surat` SET subject_surat = :subject_surat, tujuan = :tujuan, kode_lembaga_pengirim = :id_institusi, "
                 . "kode_hal = :hal, isi = :isi, lampiran = :lampiran, tembusan = :tembusan, ditandatangani = :ditandatangani, "
@@ -104,7 +109,7 @@ function submitEdit() {
                 }
 
                 // JIka surat merupakan hasil upload, upload file-nya ke folder yang telah ditentukan
-                if ($paramUploaded == 'true' AND $wasUploaded == 'true') {
+                if (($paramUploaded == true) && ($wasUploaded == 'true')) {
                     $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
                     UpdateSuratUploaded($db, $nosurat, $req['OldFileUploaded'], $file_path);
                     if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
@@ -365,9 +370,9 @@ function sendEmailEdit($paramSubject, $receiver, $output, $paramLampiran, $param
     $mail->SetFrom("notifion.info");
     $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " sudah diperbaiki dan menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
@@ -407,9 +412,9 @@ function sendEmailEditUploaded($paramSubject, $receiver, $output, $paramLampiran
     $mail->SetFrom("notifion.info");
     $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " sudah diperbaiki dan menunggu untuk di validasi.<br/>Terdapat " . $paramLampiran . " Lampiran, Untuk Mengecek Lampiran, silahkan kunjungi site notifion";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." sudah diperbaiki dan menunggu untuk di validasi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " sudah diperbaiki dan menunggu untuk di validasi.";
     }
     $email = $receiver;
     $mail->addAttachment($output);
@@ -440,9 +445,9 @@ function sendEmailKoreksi($paramSubject, $receiver, $output, $paramLampiran, $pa
     $mail->SetFrom("notifion.info");
     $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " perlu dikoreksi.";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " perlu dikoreksi.";
     }
     $email = $receiver;
     $mail->addStringAttachment($output, $paramSubject . '.pdf');
@@ -482,9 +487,9 @@ function sendEmailKoreksiUploaded($paramSubject, $receiver, $output, $paramLampi
     $mail->SetFrom("notifion.info");
     $mail->Subject = "notifion.info";
     if ($paramLampiran > 0) {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " perlu dikoreksi.";
     } else {
-        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor ".$nosurat." perlu dikoreksi.";
+        $mail->Body = "Surat dari " . $paramNamaInstitusi . " Mengenai " . $paramSubject . " dengan nomor " . $nosurat . " perlu dikoreksi.";
     }
     $email = $receiver;
     $mail->addAttachment($output);

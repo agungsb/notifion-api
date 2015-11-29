@@ -1999,7 +1999,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
             for ($i = 0; $i < count($temp_email); $i++) {
                 $penerima = implode("", $temp_email[$i]);
                 if ($isUploaded == 'false') {
-                    sendEmail($subject, $penerima, $file_surat, $lampiran, $nama_institusi);
+                    sendEmail($subject, $penerima, $file_surat, $lampiran, $nama_institusi, $nosurat);
                 } else {
                     $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
                     $result2 = $db->prepare($sql);
@@ -2007,7 +2007,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
                     if ($result2->rowCount() > 0) { // Jika ditemukan
                         $rowEmail = $result2->fetch();
                         $fileSurat = $rowEmail['file_path'];
-                        sendEmailUploaded($subject, $penerima, $fileSurat, $lampiran, $nama_institusi);
+                        sendEmailUploaded($subject, $penerima, $fileSurat, $lampiran, $nama_institusi, $nosurat);
                     }
                 }
             }
