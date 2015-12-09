@@ -36,19 +36,22 @@ function submitSurat() {
         } else {
             $paramIsi = "";
         }
-
+        
+        $tempId= $t = time(); //id_surat
         $paramTanggalSurat = $req['tanggal_surat'];
 
         $timezone_identifier = "Asia/Jakarta";
         date_default_timezone_set($timezone_identifier);
         $tanggal_surat = date('Y-m-d', strtotime($paramTanggalSurat));
 
-        $nosurat = checkCounter($db, $paramIdInstitusi, false) . "/UN39." . getKodeUnit($db, $paramIdInstitusi) . "/" . $paramHal . "/" . date('y'); //penomoran surat
+        $nosurat = '';
+                //checkCounter($db, $paramIdInstitusi, false) . "/UN39." . getKodeUnit($db, $paramIdInstitusi) . "/" . $paramHal . "/" . date('y'); //penomoran surat
 
-        $query = "INSERT INTO `surat`(subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat, ditandatangani, is_uploaded)"
-                . " VALUES(:subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat, :ditandatangani, :is_uploaded)";
+        $query = "INSERT INTO `surat`(id_surat, subject_surat, tujuan, kode_lembaga_pengirim, penandatangan, no_surat, lampiran, kode_hal, isi, tembusan, tanggal_surat, ditandatangani, is_uploaded)"
+                . " VALUES(:id_surat, :subject_surat, :tujuan, :id_institusi, :penandatangan, :nosurat, :lampiran, :hal, :isi, :tembusan, :tanggal_surat, :ditandatangani, :is_uploaded)";
 
         $stmt = $db->prepare($query);
+        $stmt->bindValue(":id_surat", $tempId);
         $stmt->bindValue(":subject_surat", $paramSubject);
         $stmt->bindValue(":tujuan", $tujuan);
         $stmt->bindValue(":id_institusi", $paramIdInstitusi);
@@ -86,7 +89,7 @@ function submitSurat() {
                 if ($paramUploaded) {
                     $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
                     if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
-                        if (!InsertSuratUploaded($db, $nosurat, $file_path)) {
+                        if (!InsertSuratUploaded($db, $tempId, $file_path)) {
                             die('{"result": "Gagal mengupload surat"}');
                         }
                     }
@@ -97,7 +100,7 @@ function submitSurat() {
                     for ($i = 0; $i < $paramLampiran; $i++) {
                         $destination = 'assets/attachments/' . $_FILES[$i]['name'];
                         if (move_uploaded_file($_FILES[$i]['tmp_name'], $destination)) {
-                            if (!InsertSuratAttachment($db, $nosurat, $destination)) {
+                            if (!InsertSuratAttachment($db, $tempId, $destination)) {
                                 die('{"result": "Gagal mengupload lampiran"}');
                             }
                         }
@@ -105,7 +108,7 @@ function submitSurat() {
                 }
 
                 if ($penandatangan != null && $paramUploaded == 'false') {
-                    $sql = "SELECT surat.file_surat From surat WHERE no_surat='" . $nosurat . "'";
+                    $sql = "SELECT surat.file_surat From surat WHERE id_surat='" . $tempId . "'";
                     $result = $db->prepare($sql);
                     $result->execute();
                     if ($result->rowCount() > 0) { // Jika ditemukan
@@ -114,7 +117,7 @@ function submitSurat() {
                         sendEmail($paramSubject, $penandatanganEmail, $fileSurat, $paramLampiran, $paramNamaInstitusi, $nosurat);
                     }
                 } else {
-                    $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                    $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE id_surat='" . $tempId . "'";
                     $result = $db->prepare($sql);
                     $result->execute();
                     if ($result->rowCount() > 0) { // Jika ditemukan
@@ -142,7 +145,7 @@ function submitSurat() {
                     if ($paramUploaded == 'true') {
                         $file_path = 'assets/uploaded/' . $_FILES['isi']['name'];
                         if (move_uploaded_file($_FILES['isi']['tmp_name'], $file_path)) {
-                            if (!InsertSuratUploaded($db, $nosurat, $file_path)) {
+                            if (!InsertSuratUploaded($db, $tempId, $file_path)) {
                                 die('{"result": "Gagal mengupload surat"}');
                             }
                         }
@@ -153,7 +156,7 @@ function submitSurat() {
                         for ($i = 0; $i < $paramLampiran; $i++) {
                             $destination = 'assets/attachments/' . $_FILES[$i]['name'];
                             if (move_uploaded_file($_FILES[$i]['tmp_name'], $destination)) {
-                                if (!InsertSuratAttachment($db, $nosurat, $destination)) {
+                                if (!InsertSuratAttachment($db, $tempId, $destination)) {
                                     die('{"result": "Gagal mengupload lampiran"}');
                                 }
                             }
@@ -173,11 +176,11 @@ function submitSurat() {
     $db = null;
 }
 
-function InsertSuratUploaded($db, $nosurat, $file_path) {
-    $query = "INSERT INTO `surat_uploaded`(no_surat, file_path) VALUES(:no_surat, :file_path)";
+function InsertSuratUploaded($db, $tempId, $file_path) {
+    $query = "INSERT INTO `surat_uploaded`(id_surat, file_path) VALUES(:id_surat, :file_path)";
 
     $stmt = $db->prepare($query);
-    $stmt->bindValue(":no_surat", $nosurat);
+    $stmt->bindValue(":id_surat", $tempId);
     $stmt->bindValue(":file_path", $file_path);
     try {
         if ($stmt->execute()) {
@@ -188,11 +191,11 @@ function InsertSuratUploaded($db, $nosurat, $file_path) {
     }
 }
 
-function InsertSuratAttachment($db, $nosurat, $file_path) {
-    $query = "INSERT INTO `surat_lampiran`(no_surat, file_path) VALUES(:no_surat, :file_path)";
+function InsertSuratAttachment($db, $tempId, $file_path) {
+    $query = "INSERT INTO `surat_lampiran`(id_surat, file_path) VALUES(:id_surat, :file_path)";
 
     $stmt = $db->prepare($query);
-    $stmt->bindValue(":no_surat", $nosurat);
+    $stmt->bindValue(":id_surat", $tempId);
     $stmt->bindValue(":file_path", $file_path);
     try {
         if ($stmt->execute()) {

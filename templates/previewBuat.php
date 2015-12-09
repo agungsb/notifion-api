@@ -59,7 +59,7 @@ function previewBuat() {
     $pdf->MultiCell(0, 0, ':', 0, 'L', 0, 0, 50, 61, true, 0, false, true, 0, 'M', true);
     $pdf->MultiCell(0, 0, 'Hal', 0, 'L', 0, 0, 25, 69, true, 0, false, true, 0, 'M', true);
     $pdf->MultiCell(0, 0, ':', 0, 'L', 0, 0, 50, 69, true, 0, false, true, 0, 'M', true);
-    $pdf->MultiCell(0, 0, '' . $paramNoSurat . '', 0, 'L', 0, 0, 53, 53, true, 0, false, true, 0, 'M', true);
+    $pdf->MultiCell(0, 0, '', 0, 'L', 0, 0, 53, 53, true, 0, false, true, 0, 'M', true);
     $pdf->MultiCell(0, 0, '' . $paramLampiran . '', 0, 'L', 0, 0, 53, 61, true, 0, false, true, 0, 'M', true);
     $pdf->MultiCell(90, 17, '' . $paramHal . '', 0, 'L', 0, 0, 53, 69, true, 0, false, true, 0, 'T', true);
 

@@ -6,18 +6,8 @@
             <file>file:/C:/xampp/htdocs/notifion-api/index.php</file>
             <file>file:/C:/xampp/htdocs/notifion-api/templates/submitSurat.php</file>
             <file>file:/C:/xampp/htdocs/notifion-api/templates/submitEdit.php</file>
-            <file>file:/C:/xampp/htdocs/notifion-api/templates/authSurat.php</file>
         </group>
-        <group>
-            <file>file:/C:/xampp/htdocs/notifion-api/index.php</file>
-            <file>file:/C:/xampp/htdocs/notifion-api/templates/submitSurat.php</file>
-            <file>file:/C:/xampp/htdocs/notifion-api/templates/submitEdit.php</file>
-            <file>file:/C:/xampp/htdocs/notifion-api/templates/authSurat.php</file>
-        </group>
-        <group>
-            <file>file:/C:/xampp/htdocs/notifion-api/index.php</file>
-            <file>file:/C:/xampp/htdocs/notifion-api/templates/submitSurat.php</file>
-            <file>file:/C:/xampp/htdocs/notifion-api/templates/authSurat.php</file>
-        </group>
+        <group/>
+        <group/>
     </open-files>
 </project-private>

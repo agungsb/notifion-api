@@ -592,7 +592,7 @@ function getAllSurats($token, $offset, $limit) {
                 $role = $account;
             }
             $penandatangan = getAccountName($db, $row['penandatangan']);
-            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => $penandatangan['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $response[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => $penandatangan['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['id_surat']));
             $i++;
         }
     } else {
@@ -622,7 +622,7 @@ function getAllSuratsKeluar($token, $offset, $limit) {
         $i = 0;
         while ($row = $stmt->fetch()) {
             $penandatangan = getAccountName($db, $row['penandatangan']);
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => $penandatangan['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id_surat'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "ditandatangani" => (int) $row['ditandatangani'], "namaPenandatangan" => $penandatangan['nama'], "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tujuan" => listTujuan($db, $row['tujuan']), "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['id_surat']));
             $i++;
         }
     } else {
@@ -632,13 +632,13 @@ function getAllSuratsKeluar($token, $offset, $limit) {
     echo '{"count": ' . $stmt->rowCount() . ', "isUnreads": ' . countUnreads($token) . ', "isFavorites": ' . countFavorites($token) . ', "isUnsigned": ' . countUnsigned($token) . ', "result": ' . json_encode($output) . '}';
 }
 
-function uploadedFilePath($no_surat) {
+function uploadedFilePath($id_surat) {
     $url = $_SERVER['SERVER_NAME'];
     $db = getDB();
-    $query = "SELECT surat_uploaded.file_path FROM `surat`, `surat_uploaded` WHERE surat.no_surat = :no_surat AND surat.no_surat = surat_uploaded.no_surat";
+    $query = "SELECT surat_uploaded.file_path FROM `surat`, `surat_uploaded` WHERE surat.id_surat = :id_surat AND surat.id_surat = surat_uploaded.id_surat";
 
     $stmt = $db->prepare($query);
-    $stmt->bindValue(":no_surat", $no_surat);
+    $stmt->bindValue(":id_surat", $id_surat);
     try {
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
@@ -655,16 +655,16 @@ function uploadedFilePath($no_surat) {
     return $result;
 }
 
-function getLampiranFilePath($no_surat) {
+function getLampiranFilePath($id_surat) {
 
     $lampirans = array();
 
     $db = getDB();
 
-    $query = "SELECT surat_lampiran.file_path, surat_lampiran.id_lampiran FROM `surat`, `surat_lampiran` WHERE surat.no_surat = :no_surat AND surat.no_surat = surat_lampiran.no_surat";
+    $query = "SELECT surat_lampiran.file_path, surat_lampiran.id_lampiran FROM `surat`, `surat_lampiran` WHERE surat.id_surat = :id_surat AND surat.no_surat = surat_lampiran.id_surat";
 
     $stmt = $db->prepare($query);
-    $stmt->bindValue(":no_surat", $no_surat);
+    $stmt->bindValue(":id_surat", $id_surat);
     $stmt->execute();
     if ($stmt->rowCount() > 0) {
         $i = 0;
@@ -695,7 +695,7 @@ function getAllSuratsDraft($token, $offset, $limit) {
     if ($stmt->rowCount() > 0) {
         $i = 0;
         while ($row = $stmt->fetch()) {
-            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi'], "no_surat" => $row['no_surat'], "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $output[$i] = array("id" => $row['id_surat'], "subject" => $row['subject_surat'], "lampiran" => $row['lampiran'], "hal" => $row['deskripsi'], "pengirim" => $row['nama_institusi'], "tanggal" => convertDate($row['tanggal_surat']), "koreksi" => $row['koreksi'], "no_surat" => $row['no_surat'], "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['id_surat']));
             $i++;
         }
     } else {
@@ -732,7 +732,7 @@ function getAllFavorites($token, $offset, $limit) {
                 $role = $account;
             }
 //            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "tanggal" => convertDate($row['tanggal_surat']));
-            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['no_surat']));
+            $output[$i] = array("pengirim" => $row['nama_institusi'], "id" => $row['id'], "hal" => $row['deskripsi'], "subject" => $row['subject_surat'], "role" => $role, "notif_web" => filter_var($row['notif_web'], FILTER_VALIDATE_BOOLEAN), "notif_app" => filter_var($row['notif_app'], FILTER_VALIDATE_BOOLEAN), "isFavorite" => filter_var($row['isFavorite'], FILTER_VALIDATE_BOOLEAN), "isUnread" => filter_var($row['isUnread'], FILTER_VALIDATE_BOOLEAN), "no_surat" => $row['no_surat'], "lampiran" => $row['lampiran'], "namaPenandatangan" => getAccountName($db, $row['penandatangan']), "jabatanPenandatangan" => getJabatan($db, $row['penandatangan']), "tanggal" => convertDate($row['tanggal_surat']), "isi" => $row['isi'], "tembusan" => listTembusan($db, $row['tembusan']), "file_lampiran" => getLampiranFilePath($row['no_surat']), "isUploaded" => filter_var($row['is_uploaded'], FILTER_VALIDATE_BOOLEAN), "uploadedFilePath" => uploadedFilePath($row['id_surat']));
             $i++;
         }
     } else {
@@ -1835,14 +1835,14 @@ function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $
     try {
         if (is_connected()) {
             $stmt->execute();
-            $sql = "insert into surat_koreksi (id_koreksi, no_surat, koreksi) values (:id_koreksi, :no_surat, :koreksi)";
+            $sql = "insert into surat_koreksi (id_koreksi, id_surat, koreksi) values (:id_koreksi, :id_surat, :koreksi)";
             $stmt2 = $db->prepare($sql);
             $stmt2->bindValue(":id_koreksi", $id_surat);
-            $stmt2->bindValue(":no_surat", $no_surat);
+            $stmt2->bindValue(":id_surat", $id_surat);
             $stmt2->bindValue(":koreksi", $pesan);
             $stmt2->execute();
             if ($uploaded == 'true') {
-                $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $no_surat . "'";
+                $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE id_surat='" . $id_surat . "'";
                 $result = $db->prepare($sql);
                 $result->execute();
                 if ($result->rowCount() > 0) { // Jika ditemukan
@@ -1861,7 +1861,7 @@ function sendToDraft($db, $token, $id_surat, $no_surat, $account, $id_jabatan, $
         } else {
             $nohandphone = pushNotificationSMS($db, $penandatangan);
             $tujuanHp = implode("", $nohandphone);
-            sendSmsKoreksi($tujuanHp, $db, $no_surat, $pesan);
+            sendSmsKoreksi($tujuanHp, $db, $no_surat, $pesan, $id_surat);
             echo '{"result": "Success", "account": "' . $id_institusi . '", "isCorrected": ' . countCorrected($id_institusi) . '}';
         }
         $db = null;
@@ -1882,6 +1882,8 @@ function accSurat() {
     $account = $decode->account;
     $id_jabatan = $decode->id_jabatan;
     $nama_institusi = $decode->nama_institusi;
+    $id_institusi = $decode->id_institusi;
+    $is_preview = false;
 
     $query = "SELECT surat.* FROM surat WHERE surat.id_surat=:id_surat AND (surat.penandatangan=:account OR surat.penandatangan=:id_jabatan)";
     $stmt = $db->prepare($query);
@@ -1889,22 +1891,19 @@ function accSurat() {
     $stmt->bindValue(":account", $account);
     $stmt->bindValue(":id_jabatan", $id_jabatan);
     try {
-        if (is_connected()) {
-            $stmt->execute();
+        if ($stmt->execute()) {
             if ($stmt->rowCount() == 1) {
                 $row = $stmt->fetch();
-//            echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
-                updateTandatangan($db, $token, $id_surat, $row['subject_surat'], $account, $id_jabatan, $row['tujuan'], $row['tembusan'], $nama_institusi, $row['file_surat'], $row['is_uploaded'], $row['lampiran'], $row['no_surat']);
-            } else {
-//                echo '{"error": "Action not granted"}';
-            }
-        } else {
-//            echo '{"result": "Internet OFF"}'; 
-            $stmt->execute();
-            if ($stmt->rowCount() == 1) {
-                $row = $stmt->fetch();
-//            echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
-                updateTandatangan($db, $token, $id_surat, $row['subject_surat'], $account, $id_jabatan, $row['tujuan'], $row['tembusan'], $nama_institusi, $row['file_surat'], $row['is_uploaded'], $row['lampiran'], $row['no_surat']);
+                $paramHal = $row['kode_hal'];
+                $no_surat = checkCounter($db, $id_institusi, $is_preview) . "/UN39." . getKodeUnit($db, $id_institusi) . "/" . $paramHal . "/" . date('y');
+                $query2 = "UPDATE surat SET no_surat=:no_surat where id_surat =:id_surat";
+                $stmtUpdate = $db->prepare($query2);
+                $stmtUpdate->bindValue(":id_surat", $id_surat);
+                $stmtUpdate->bindValue(":no_surat", $no_surat);
+                if ($stmtUpdate->execute()) {
+                    updateTandatangan($db, $token, $id_surat, $row['subject_surat'], $account, $id_jabatan, $row['tujuan'], $row['tembusan'], $nama_institusi, $row['file_surat'], $row['is_uploaded'], $row['lampiran'], $row['no_surat']);
+                }
+//              echo $row['subject_surat'] . " - " . $row['tujuan'] . " - " . $row['tembusan'] . " - " . $nama_institusi;
             } else {
 //                echo '{"error": "Action not granted"}';
             }
@@ -2007,7 +2006,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
                 if ($isUploaded == 'false') {
                     sendEmail($subject, $penerima, $file_surat, $lampiran, $nama_institusi, $nosurat);
                 } else {
-                    $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE no_surat='" . $nosurat . "'";
+                    $sql = "SELECT surat_uploaded.file_path From surat_uploaded WHERE id_surat='" . $id_surat . "'";
                     $result2 = $db->prepare($sql);
                     $result2->execute();
                     if ($result2->rowCount() > 0) { // Jika ditemukan
@@ -2048,7 +2047,7 @@ function distribusiSurat($db, $token, $id_surat, $subject, $tu, $tembusan, $nama
         if (count($temp_sms) > 0) {
             for ($i = 0; $i < count($temp_sms); $i++) {
                 $penerima = implode("", $temp_sms[$i]);
-                sendSmsAcc($penerima, $db, $nama_institusi, $subject, $lampiran, $nosurat);
+                sendSmsAcc($penerima, $db, $nama_institusi, $subject, $lampiran, $nosurat, $id_surat);
             }
         }
     }
@@ -2252,10 +2251,10 @@ function is_connected() {
     return $is_conn;
 }
 
-function getLampiran($db, $no_surat) {
+function getLampiran($db, $id_surat) {
 //    $db = getDB();
 //    $no_surat = '3/UN39.18/AK/15';
-    $sqlLampiran = "SELECT surat_lampiran.file_path from surat_lampiran WHERE no_surat='" . $no_surat . "'";
+    $sqlLampiran = "SELECT surat_lampiran.file_path from surat_lampiran WHERE id_surat='" . $id_surat . "'";
     $stmtLampiran = $db->prepare($sqlLampiran);
     $stmtLampiran->execute();
 
@@ -2268,7 +2267,7 @@ function getLampiran($db, $no_surat) {
     echo json_encode($lampiran);
 }
 
-function sendSmsAcc($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, $nosurat) {
+function sendSmsAcc($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, $nosurat, $id_surat) {
     $sms = "Surat Baru dari " . $paramInstitusi . ". Mengenai " . $paramSubject . " dengan lampiran sebanyak " . $paramLampiran . " Lampiran. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat surat.";
     $gammuexe = "C:\gammu\bin\gammu.exe";
     $gammurc = "C:\gammu\bin\gammurc";
@@ -2276,12 +2275,12 @@ function sendSmsAcc($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, 
     $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
     if ($out = substr(exec($cmd), 47, 2)) {
         if ($out == "OK") {
-            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where id_surat='" . $id_surat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
             echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';
         } else {
-            $sql = "UPDATE surat SET pesan_sms='pending' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='pending' where id_surat='" . $id_surat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
         }
@@ -2290,7 +2289,7 @@ function sendSmsAcc($nohp, $db, $paramInstitusi, $paramSubject, $paramLampiran, 
     }
 }
 
-function sendSmsKoreksi($nohp, $db, $nosurat, $pesan) {
+function sendSmsKoreksi($nohp, $db, $nosurat, $pesan, $id_surat) {
     $sms = "Surat No : " . $nosurat . " perlu dikoreksi. Note: Fitur Email dan Android Tidak Aktif, kunjungi website untuk melihat detilnya.";
     $gammuexe = "C:\gammu\bin\gammu.exe";
     $gammurc = "C:\gammu\bin\gammurc";
@@ -2298,12 +2297,12 @@ function sendSmsKoreksi($nohp, $db, $nosurat, $pesan) {
     $cmd = $gammuexe . ' -c ' . $gammurc . ' sendsms TEXT ' . $nohp . ' -text "' . $sms . '"';
     if ($out = substr(exec($cmd), 47, 2)) {
         if ($out == "OK") {
-            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='" . $nohp . "' where id_surat='" . $id_surat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
 //            echo '{"result": "Internet OFF, Berhasil Kirim Notifikasi SMS"}';
         } else {
-            $sql = "UPDATE surat SET pesan_sms='pending' where no_surat='" . $nosurat . "'";
+            $sql = "UPDATE surat SET pesan_sms='pending' where id_surat='" . $id_surat . "'";
             $stmt = $db->prepare($sql);
             $stmt->execute();
         }
@@ -2333,4 +2332,10 @@ function encrypt_decrypt($action, $string) {
     }
 
     return $output;
+}
+
+function updateNoSurat($db, $id_surat) {
+    $query = "SELECT * from surat where id_surat =:id_surat";
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(":id_surat", $id_surat);
 }
